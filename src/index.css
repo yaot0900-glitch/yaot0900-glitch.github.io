@@ -1,0 +1,394 @@
+@import "tailwindcss";
+
+@theme {
+  /* === 多巴胺色板 === */
+  --color-sky: #C5E8F8;              /* 更浅天蓝 → 全局背景 */
+  --color-orange: #F06B04;           /* rgb(240,107,4) 活力橙 → 信誉值卡、主按钮 */
+  --color-navy: #2B4B7C;             /* rgb(43,75,124) 深海蓝 → 倒计时卡、暗卡 */
+  --color-yellow-card: #FFFC77;      /* rgb(255,252,119) 亮黄 → 信息卡 */
+  --color-white: #FFFFFF;
+
+  /* === 功能色 === */
+  --color-primary: #F06B04;          /* 主色调（活力橙） */
+  --color-accent: #F06B04;           /* 强调色 */
+  --color-accent-light: #FF9533;
+  --color-correct: #4ADE80;
+  --color-wrong: #FBBF24;
+  --color-danger: #EF4444;
+
+  /* === 赛道色 === */
+  --color-health: #5EEAD4;
+  --color-culture: #C084FC;
+  --color-politics: #60A5FA;
+
+  /* === 文字色 === */
+  --color-text-primary: #2B4B7C;     /* 深海蓝 */
+  --color-text-secondary: rgba(43, 75, 124, 0.72);
+  --color-text-muted: rgba(43, 75, 124, 0.50);
+
+  /* === 旧兼容别名 === */
+  --color-gold: #F06B04;
+  --color-ink: #2B4B7C;
+  --color-brown: #2B4B7C;
+  --color-coral: #F06B04;
+  --color-cream: #FFFFFF;
+  --color-warm: #F06B04;
+  --color-bg-deep: #2B4B7C;
+  --color-bg-panel: #F06B04;
+  --color-mist: #8B5CF6;
+}
+
+/* ===== 全局基础 ===== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  background-color: #C5E8F8;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+  background:
+    radial-gradient(ellipse 950px 650px at 10% 12%, rgba(255, 255, 255, 0.48) 0%, transparent 50%),
+    radial-gradient(ellipse 850px 550px at 85% 8%, rgba(240, 107, 4, 0.10) 0%, transparent 50%),
+    radial-gradient(ellipse 750px 500px at 50% 55%, rgba(255, 252, 119, 0.14) 0%, transparent 50%),
+    radial-gradient(ellipse 700px 450px at 18% 78%, rgba(255, 180, 170, 0.12) 0%, transparent 50%),
+    radial-gradient(ellipse 650px 400px at 82% 72%, rgba(255, 255, 255, 0.38) 0%, transparent 50%),
+    #C5E8F8;
+  color: #2B4B7C;
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  touch-action: manipulation;
+  overflow-x: hidden;
+}
+
+/* ===== 桌面背景装饰（额外顶部光斑） ===== */
+@media (min-width: 768px) {
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background:
+      radial-gradient(ellipse 1000px 600px at 25% 8%, rgba(255, 255, 255, 0.42) 0%, transparent 50%),
+      radial-gradient(ellipse 800px 500px at 72% 18%, rgba(240, 107, 4, 0.07) 0%, transparent 50%),
+      radial-gradient(ellipse 700px 420px at 14% 65%, rgba(255, 252, 119, 0.10) 0%, transparent 50%),
+      radial-gradient(ellipse 650px 380px at 80% 60%, rgba(255, 180, 170, 0.08) 0%, transparent 50%);
+  }
+}
+
+#root {
+  position: relative;
+  z-index: 1;
+}
+
+/* ===== 通用卡片（纯白 + 淡蓝灰边框） ===== */
+.glass-card {
+  background: #FFFFFF;
+  border: 2px solid rgba(43, 75, 124, 0.12);
+  border-radius: 20px;
+  box-shadow: 0 2px 8px rgba(43, 75, 124, 0.06);
+  color: #2B4B7C;
+  padding: 32px;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.glass-card:hover {
+  box-shadow: 0 0 24px rgba(240, 107, 4, 0.20);
+  border-color: rgba(43, 75, 124, 0.25);
+}
+
+/* ===== 倒计时卡片（深海蓝底 + 白边框 + 白字） ===== */
+.card-countdown {
+  background: #2B4B7C;
+  border: 2px solid #FFFFFF;
+  border-radius: 20px;
+  box-shadow: 0 4px 16px rgba(43, 75, 124, 0.30);
+  color: #FFFFFF;
+  padding: 32px;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.card-countdown:hover {
+  box-shadow: 0 0 28px rgba(43, 75, 124, 0.45);
+  transform: translateY(-2px);
+}
+.card-countdown .text-text-primary { color: #FFFFFF; }
+.card-countdown .text-text-secondary { color: rgba(255, 255, 255, 0.80); }
+.card-countdown .text-text-muted { color: rgba(255, 255, 255, 0.60); }
+
+/* ===== 信誉值卡片（活力橙底 + 白边框 + 白字） ===== */
+.card-credibility {
+  background: #F06B04;
+  border: 2px solid #FFFFFF;
+  border-radius: 20px;
+  box-shadow: 0 4px 16px rgba(240, 107, 4, 0.30);
+  color: #FFFFFF;
+  padding: 32px;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.card-credibility:hover {
+  box-shadow: 0 0 28px rgba(240, 107, 4, 0.45);
+  transform: translateY(-2px);
+}
+.card-credibility .text-text-primary { color: #FFFFFF; }
+.card-credibility .text-text-secondary { color: rgba(255, 255, 255, 0.85); }
+.card-credibility .text-text-muted { color: rgba(255, 255, 255, 0.65); }
+
+/* ===== 题目卡片（纯白 + 淡蓝灰边框） ===== */
+.card-question {
+  background: #FFFFFF;
+  border: 2px solid rgba(43, 75, 124, 0.15);
+  border-radius: 20px;
+  box-shadow: 0 2px 10px rgba(43, 75, 124, 0.06);
+  color: #2B4B7C;
+  transition: box-shadow 0.2s ease;
+}
+
+/* ===== 辅助信息卡片（亮黄底 + 白边框 + 深蓝字） ===== */
+.card-info {
+  background: #FFFC77;
+  border: 2px solid #FFFFFF;
+  border-radius: 20px;
+  box-shadow: 0 4px 14px rgba(255, 252, 119, 0.30);
+  color: #2B4B7C;
+  padding: 28px;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.card-info:hover {
+  box-shadow: 0 0 26px rgba(255, 252, 119, 0.45);
+  transform: translateY(-2px);
+}
+.card-info .text-text-primary { color: #2B4B7C; }
+.card-info .text-text-secondary { color: rgba(43, 75, 124, 0.78); }
+.card-info .text-text-muted { color: rgba(43, 75, 124, 0.55); }
+.card-info .text-accent,
+.card-info .text-gold { color: #F06B04; }
+
+/* ===== 暗底卡片（深海蓝底 + 白边框 + 白字） ===== */
+.card-dark {
+  background: #2B4B7C;
+  border: 2px solid #FFFFFF;
+  border-radius: 20px;
+  box-shadow: 0 4px 16px rgba(43, 75, 124, 0.30);
+  color: #D0D8E8;
+  padding: 32px;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.card-dark:hover {
+  box-shadow: 0 0 28px rgba(43, 75, 124, 0.45);
+}
+.card-dark .text-accent,
+.card-dark .text-gold { color: #FF9533; }
+.card-dark .text-text-primary { color: #FFFFFF; }
+.card-dark .text-text-secondary { color: #C0CCE0; }
+.card-dark .text-text-muted { color: #909CB0; }
+.card-dark .text-correct { color: #6EE7B7; }
+.card-dark .text-wrong { color: #FBBF24; }
+
+/* 桌面端卡片 padding 统一放大 */
+@media (min-width: 768px) {
+  .card-countdown,
+  .card-credibility,
+  .card-info,
+  .card-dark {
+    padding: 40px;
+  }
+}
+
+/* ===== 主按钮（活力橙纯色 + 白字） ===== */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 56px;
+  padding: 16px 40px;
+  background: #F06B04;
+  color: #FFFFFF;
+  font-weight: 700;
+  font-size: 19px;
+  border: 2px solid #FFFFFF;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  touch-action: manipulation;
+}
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 32px rgba(240, 107, 4, 0.55), 0 6px 24px rgba(240, 107, 4, 0.35);
+}
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+/* ===== 次按钮（白底 + 深海蓝边框 + 深海蓝字） ===== */
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  padding: 14px 36px;
+  background: #FFFFFF;
+  color: #2B4B7C;
+  font-weight: 500;
+  font-size: 17px;
+  border: 2px solid #2B4B7C;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  touch-action: manipulation;
+}
+.btn-secondary:hover {
+  background: #F5F7FC;
+  border-color: #3D5A8E;
+  box-shadow: 0 0 20px rgba(43, 75, 124, 0.12);
+}
+
+/* ===== 判断按钮（真/假） ===== */
+.btn-judge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 64px;
+  min-width: 140px;
+  padding: 18px 48px;
+  font-weight: 700;
+  font-size: 21px;
+  border: none;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  touch-action: manipulation;
+}
+.btn-judge:hover {
+  box-shadow: 0 0 28px rgba(240, 107, 4, 0.40);
+}
+.btn-judge:active {
+  transform: scale(0.96);
+}
+
+/* ===== 功能面板（淡橙底） ===== */
+.panel-dark {
+  background: rgba(240, 107, 4, 0.08);
+  border: 2px solid rgba(240, 107, 4, 0.18);
+  border-radius: 20px;
+  color: #2B4B7C;
+  padding: 28px;
+  transition: box-shadow 0.2s ease;
+}
+.panel-dark:hover {
+  box-shadow: 0 0 22px rgba(240, 107, 4, 0.12);
+}
+
+/* 面板内文字 */
+.panel-dark .text-text-primary { color: #2B4B7C; }
+.panel-dark .text-text-secondary { color: rgba(43, 75, 124, 0.72); }
+.panel-dark .text-text-muted { color: rgba(43, 75, 124, 0.50); }
+
+/* ===== 页面容器 ===== */
+.page-container {
+  min-height: 100vh;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 56px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+@media (min-width: 768px) {
+  .page-container {
+    max-width: 720px;
+    padding: 72px 28px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .page-container {
+    max-width: 1024px;
+    padding: 80px 36px;
+  }
+}
+
+/* ===== 标题样式 ===== */
+h1, .h1 {
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+h2, .h2 {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+h3, .h3 {
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+/* 辅助文字 */
+.text-aux {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* ===== 页面过渡 ===== */
+.page-enter {
+  opacity: 0;
+  transform: translateY(12px);
+}
+.page-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* ===== 滚动条 ===== */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(44,62,90,0.12); border-radius: 2px; }
+
+/* ===== 动画 Keyframes ===== */
+
+/* 封面光束摆动 */
+@keyframes beamSwing {
+  0%, 100% { transform: rotate(-8deg); opacity: 0.5; }
+  50% { transform: rotate(8deg); opacity: 1; }
+}
+
+/* 月亮呼吸 */
+@keyframes moonPulse {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.3); }
+}
+
+/* 金色光点漂浮 */
+@keyframes particleFloat {
+  0% { transform: translateY(0) translateX(0); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(-120px) translateX(20px); opacity: 0; }
+}
+
+/* 🕐 时钟旋转 */
+@keyframes clockSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ☀️ 太阳跳动 */
+@keyframes sunBeat {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.25); }
+}
