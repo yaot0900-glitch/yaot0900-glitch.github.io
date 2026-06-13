@@ -82,19 +82,19 @@ export default function HomePage() {
 
       {/* 机密档案标识 */}
       <motion.div
-        className="mb-8"
+        className="mb-8 lg:mb-16"
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         transition={{ delay: 0.3, type: 'spring', stiffness: 200 }}
       >
         <div className="inline-block border border-gold/30 rounded-lg px-4 py-2 mb-2">
-          <span className="text-gold text-sm tracking-[0.3em] font-medium">TOP SECRET</span>
+          <span className="text-gold text-sm lg:text-2xl tracking-[0.3em] font-medium">TOP SECRET</span>
         </div>
-        <div className="text-text-muted text-sm tracking-wider">机密档案 · 探员入职文件</div>
+        <div className="text-text-muted text-sm lg:text-2xl tracking-wider">机密档案 · 探员入职文件</div>
       </motion.div>
 
       {/* 故事文字 */}
-      <div className="glass-card w-full max-w-sm p-8 mb-12 min-h-[300px] text-left">
+      <div className="glass-card w-full max-w-sm lg:max-w-3xl lg:px-16 p-8 mb-12 lg:mb-24 min-h-[300px] text-left">
         {STORY_LINES.slice(0, displayedLines).map((line, i) => (
           <motion.p
             key={i}
@@ -125,7 +125,7 @@ export default function HomePage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <label className="block text-text-secondary text-base mb-2">
+          <label className="block text-text-secondary text-base lg:text-2xl mb-2">
             请输入你的探员代号
           </label>
           <input
@@ -136,13 +136,13 @@ export default function HomePage() {
             placeholder="例如：真相猎手"
             maxLength={10}
             autoFocus
-            className="w-full bg-white/60 border border-[#D4C8B0] rounded-2xl px-5 py-4 text-center text-text-primary text-lg placeholder:text-text-muted focus:outline-none focus:border-primary/60 focus:bg-white/80 focus:shadow-[0_0_20px_rgba(212,168,67,0.2)] transition-all"
+            className="w-full bg-white/60 border border-[#D4C8B0] rounded-2xl px-5 py-4 text-center text-text-primary text-lg lg:text-2xl placeholder:text-text-muted focus:outline-none focus:border-primary/60 focus:bg-white/80 focus:shadow-[0_0_20px_rgba(212,168,67,0.2)] transition-all"
           />
           {error && (
             <p className="text-wrong text-sm mt-2">{error}</p>
           )}
           <button
-            className="btn-primary w-full mt-6 text-xl"
+            className="btn-primary w-full mt-6 text-xl lg:text-2xl"
             onClick={handleStart}
           >
             接受任务

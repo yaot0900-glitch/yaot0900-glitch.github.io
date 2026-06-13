@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useGame } from '../hooks/useGame'
 import CountdownBar from '../components/CountdownBar'
 import CredibilityStars from '../components/CredibilityStars'
+import MobileStatusBar from '../components/MobileStatusBar'
 import Button from '../components/Button'
 import FeedbackModal from '../components/FeedbackModal'
 
@@ -343,15 +344,18 @@ export default function AiImagePage() {
         </div>
       </div>
 
-      {/* 手机端：双卡片 */}
-      <div className="lg:hidden w-full max-w-md mx-auto mt-5 space-y-14 pb-8">
-        <CredibilityStars current={credibility} />
-        <CountdownBar
+      {/* 手机端：紧凑顶栏（倒计时 + 信誉度合并） */}
+      <div className="lg:hidden w-full max-w-md mx-auto mb-4">
+        <MobileStatusBar
           key={timerKey}
           seconds={TIME_LIMIT}
           running={timerRunning}
           onTimeout={handleTimeout}
+          credibility={credibility}
         />
+        <div className="text-center mt-2">
+          <span className="text-text-muted text-sm">🤖 AI图片侦探 · 第 {qIndex + 1}/{questions.length} 题</span>
+        </div>
       </div>
 
       <AnimatePresence>

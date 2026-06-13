@@ -64,7 +64,6 @@ export default function TrackSelectPage() {
     navigate('/quiz')
   }
 
-  const doneCount = state.completedTracks.length
   const preTestTrack = state.preTestTrack
 
   return (

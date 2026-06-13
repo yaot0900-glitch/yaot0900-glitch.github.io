@@ -19,12 +19,6 @@ const TRACK_EMOJI: Record<Track, string> = {
   politics: '🏛️',
 }
 
-const TRACK_TIPS: Record<Track, string> = {
-  health: '建议多关注权威医学科普账号（如丁香医生、腾讯医典），遇到"神奇疗效"类信息先查证。',
-  culture: '遇到名人名言先查出处，文物鉴定信息以博物馆官方为准，警惕"惊人发现"类标题。',
-  politics: '关注官方媒体渠道，对"突发""震惊"类标题保持警惕，多方交叉验证重要信息。',
-}
-
 export default function ReportPage() {
   const navigate = useNavigate()
   const { state, totalScore, correctRate, totalCorrect, skipPostTest } = useGame()
@@ -93,8 +87,8 @@ export default function ReportPage() {
     >
       {/* 标题 */}
       <div className="text-center mb-8">
-        <p className="text-text-secondary text-base mb-1.5">真相解码局 · 媒体素养评估报告</p>
-        <h2 className="text-3xl font-bold text-accent">探员档案卡</h2>
+        <p className="text-text-secondary text-base lg:text-lg mb-1.5">真相解码局 · 媒体素养评估报告</p>
+        <h2 className="text-3xl lg:text-4xl font-bold text-accent glow-text">探员档案卡</h2>
       </div>
 
       {/* 桌面双列：档案卡 + 雷达图 */}
@@ -102,29 +96,29 @@ export default function ReportPage() {
         {/* 左：档案卡 */}
         <div className="w-full lg:flex-1">
           <motion.div
-            className="glass-card p-7 text-center w-full"
+            className="glass-card p-7 text-center w-full lg:h-full lg:flex lg:flex-col lg:justify-center"
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.2 }}
           >
-            <div className="text-5xl mb-2">{rank.badge}</div>
-            <h3 className="text-xl font-bold text-accent">{state.playerName}</h3>
-            <p className="text-text-secondary text-base">{rank.title}</p>
+            <div className="text-5xl lg:text-6xl mb-2">{rank.badge}</div>
+            <h3 className="text-2xl lg:text-3xl font-bold text-accent glow-text">{state.playerName}</h3>
+            <p className="text-text-secondary text-base lg:text-lg">{rank.title}</p>
             <div className="flex justify-center gap-1 my-3">
-              {Array.from({ length: rank.stars }).map((_, i) => <span key={i}>⭐</span>)}
+              {Array.from({ length: rank.stars }).map((_, i) => <span key={i} className="text-lg lg:text-xl">⭐</span>)}
             </div>
             <div className="grid grid-cols-3 gap-4 mt-5 pt-5 border-t border-[#E8DDD0]">
               <div>
-                <p className="text-2xl font-bold text-accent">{totalScore}</p>
-                <p className="text-text-muted text-base">总分</p>
+                <p className="text-3xl lg:text-4xl font-bold text-accent glow-text">{totalScore}</p>
+                <p className="text-text-muted text-base lg:text-lg">总分</p>
               </div>
               <div>
-                <p className="text-2xl font-bold text-correct">{Math.round(correctRate * 100)}%</p>
-                <p className="text-text-muted text-base">正确率</p>
+                <p className="text-3xl lg:text-4xl font-bold text-correct glow-text">{Math.round(correctRate * 100)}%</p>
+                <p className="text-text-muted text-base lg:text-lg">正确率</p>
               </div>
               <div>
-                <p className="text-2xl font-bold text-text-primary">{totalCorrect}/{totalAnswered}</p>
-                <p className="text-text-muted text-base">正确/总题</p>
+                <p className="text-3xl lg:text-4xl font-bold text-text-primary glow-text">{totalCorrect}/{totalAnswered}</p>
+                <p className="text-text-muted text-base lg:text-lg">正确/总题</p>
               </div>
             </div>
           </motion.div>
@@ -133,18 +127,18 @@ export default function ReportPage() {
         {/* 右：雷达图 — 深棕面板 */}
         <div className="w-full lg:flex-1">
           <motion.div
-            className="card-dark text-center w-full"
+            className="card-dark text-center w-full lg:h-full lg:flex lg:flex-col lg:justify-center"
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.4 }}
           >
-            <h4 className="text-base font-bold text-accent mb-4">📊 能力雷达图</h4>
+            <h4 className="text-lg lg:text-xl font-bold text-accent mb-4 glow-text">📊 能力雷达图</h4>
             <RadarChart data={radarData} size={260} />
             {!state.level2Complete && !state.level2Skipped && (
-              <p className="text-text-secondary text-base mt-4">🤖 AI辨别力：未考核</p>
+              <p className="text-text-secondary text-base lg:text-lg mt-4">🤖 AI辨别力：未考核</p>
             )}
             {state.level2Complete && (
-              <p className="text-text-secondary text-base mt-4">
+              <p className="text-text-secondary text-base lg:text-lg mt-4">
                 🤖 AI辨别力得分：{state.level2Score} 分
               </p>
             )}
@@ -160,11 +154,11 @@ export default function ReportPage() {
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.6 }}
         >
-          <h4 className="text-base font-bold mb-4">🎯 你的辨别风格</h4>
-          <div className="text-5xl mb-2">{style.emoji}</div>
-          <p className="text-accent font-bold text-lg">{style.label}</p>
-          <p className="text-text-secondary text-base mt-1.5">{style.description}</p>
-          <div className="mt-4 text-base text-text-muted">
+          <h4 className="text-lg lg:text-xl font-bold mb-4">🎯 你的辨别风格</h4>
+          <div className="text-5xl lg:text-6xl mb-2">{style.emoji}</div>
+          <p className="text-accent font-bold text-lg lg:text-xl">{style.label}</p>
+          <p className="text-text-secondary text-base lg:text-lg mt-1.5">{style.description}</p>
+          <div className="mt-4 text-base lg:text-lg text-text-muted">
             平均判断时间：{avgTime.toFixed(1)}秒
           </div>
         </motion.div>
@@ -175,13 +169,13 @@ export default function ReportPage() {
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.7 }}
         >
-          <h4 className="text-base font-bold text-accent mb-4">📋 维度详情</h4>
+          <h4 className="text-lg lg:text-xl font-bold text-accent mb-4 glow-text">📋 维度详情</h4>
           <div className="space-y-3">
             {radarData.map(d => (
               <div key={d.label} className="flex items-center gap-3">
                 <span className="w-3.5 h-3.5 rounded-full flex-shrink-0" style={{ backgroundColor: d.color }} />
-                <span className="text-text-secondary text-base flex-1 text-left">{d.label}</span>
-                <span className="text-base font-bold" style={{ color: d.color }}>{d.value}</span>
+                <span className="text-text-secondary text-base lg:text-lg flex-1 text-left">{d.label}</span>
+                <span className="text-base lg:text-lg font-bold glow-text" style={{ color: d.color }}>{d.value}</span>
               </div>
             ))}
           </div>
@@ -316,8 +310,8 @@ export default function ReportPage() {
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 1.2 }}
       >
-        <h4 className="text-base font-bold text-accent mb-4">🫡 真相探员宣誓</h4>
-        <p className="text-text-secondary text-base leading-relaxed italic">
+        <h4 className="text-base lg:text-2xl font-bold text-accent mb-4">🫡 真相探员宣誓</h4>
+        <p className="text-text-secondary text-base lg:text-2xl leading-relaxed italic">
           "我承诺，在分享任何信息之前，<br />
           先停下，先思考，先核实。<br />
           不传谣、不信谣、不造谣。<br />
@@ -327,13 +321,15 @@ export default function ReportPage() {
       </motion.div>
 
       {/* 按钮 */}
-      <div className="w-full w-full lg:max-w-5xl mx-auto space-y-4">
+      <div className="w-full lg:max-w-5xl mx-auto space-y-4">
         <Button variant="primary" className="w-full" onClick={handleScreenshot}>
           📸 保存报告图片
         </Button>
-        <Button variant="secondary" className="w-full" onClick={() => navigate('/level2-image')}>
-          🔥 挑战AI辨别关卡
-        </Button>
+        {!state.level2Complete && (
+          <Button variant="secondary" className="w-full" onClick={() => navigate('/level2-image')}>
+            🔥 挑战AI辨别关卡
+          </Button>
+        )}
         <button
           className="w-full text-text-muted text-base underline underline-offset-4 hover:text-text-secondary transition-colors py-2"
           onClick={() => navigate('/home')}

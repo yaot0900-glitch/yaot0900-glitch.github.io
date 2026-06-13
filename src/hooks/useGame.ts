@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 import { useGameContext, type Track, type Answer } from '../context/GameContext'
-import { calcQuestionScore, calcTrackBonus, type AgentRank } from '../utils/scoring'
+import { calcQuestionScore, calcTrackBonus } from '../utils/scoring'
 
 export function useGame() {
   const { state, dispatch } = useGameContext()

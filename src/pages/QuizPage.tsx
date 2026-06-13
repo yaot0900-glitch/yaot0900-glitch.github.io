@@ -5,6 +5,7 @@ import { useGame } from '../hooks/useGame'
 import QuestionCard from '../components/QuestionCard'
 import CountdownBar from '../components/CountdownBar'
 import CredibilityStars from '../components/CredibilityStars'
+import MobileStatusBar from '../components/MobileStatusBar'
 import FeedbackModal from '../components/FeedbackModal'
 import Button from '../components/Button'
 import questionBank from '../data/questions.json'
@@ -201,7 +202,7 @@ export default function QuizPage() {
               source={currentQuestion.source}
               questionNumber={index + 1}
               totalQuestions={totalQuestions}
-              track={track}
+              track={track || undefined}
             />
           </motion.div>
 
@@ -258,17 +259,17 @@ export default function QuizPage() {
         </div>
       </div>
 
-      {/* 手机端：双卡片堆叠 */}
-      <div className="lg:hidden w-full max-w-md mx-auto mt-5 space-y-14 pb-8">
-        <CredibilityStars current={state.credibility} />
-        <CountdownBar
+      {/* 手机端：紧凑顶栏（倒计时 + 信誉度合并） */}
+      <div className="lg:hidden w-full max-w-md mx-auto mb-4">
+        <MobileStatusBar
           key={timerKey}
           seconds={TIME_LIMIT}
           running={timerRunning}
           onTimeout={handleTimeout}
+          credibility={state.credibility}
         />
-        <div className="text-center">
-          <span className="text-text-muted text-base">
+        <div className="text-center mt-2">
+          <span className="text-text-muted text-sm">
             🏷️ {track ? trackNames[track] : ''} · 第{index + 1}/{totalQuestions}题 · {state.score} 分
           </span>
         </div>

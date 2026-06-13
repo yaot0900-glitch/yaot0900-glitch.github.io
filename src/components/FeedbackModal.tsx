@@ -21,7 +21,7 @@ export default function FeedbackModal({ isCorrect, explanation, score, onNext }:
 
       {/* 弹窗内容 */}
       <motion.div
-        className="relative glass-card w-full max-w-lg mx-4 mb-8 sm:mb-0 p-12 overflow-hidden"
+        className="relative glass-card w-full max-w-lg lg:max-w-2xl mx-4 mb-8 sm:mb-0 p-6 sm:p-10 overflow-hidden max-h-[85vh] overflow-y-auto"
         initial={{ y: 100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ type: 'spring', stiffness: 200, damping: 20 }}
@@ -32,14 +32,14 @@ export default function FeedbackModal({ isCorrect, explanation, score, onNext }:
         {/* 标题 */}
         <div className="text-center mb-6">
           <motion.div
-            className="text-6xl mb-3"
+            className="text-5xl sm:text-6xl mb-3"
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: 'spring', delay: 0.1 }}
           >
             {isCorrect ? '🎉' : '🔍'}
           </motion.div>
-          <h3 className={`text-3xl font-bold ${isCorrect ? 'text-correct' : 'text-wrong'}`}>
+          <h3 className={`text-2xl sm:text-3xl font-bold ${isCorrect ? 'text-correct' : 'text-wrong'}`}>
             {isCorrect ? '真相确认！' : '让我们重新看看'}
           </h3>
         </div>
@@ -47,7 +47,7 @@ export default function FeedbackModal({ isCorrect, explanation, score, onNext }:
         {/* 答对：知识巩固 */}
         {isCorrect && (
           <div className="mb-7">
-            <div className="bg-correct/5 border border-correct/20 rounded-xl p-7">
+            <div className="bg-correct/5 border border-correct/20 rounded-xl p-4 sm:p-7">
               <p className="text-correct text-lg font-medium mb-2">💡 为什么这是真的：</p>
               <p className="text-text-secondary text-lg leading-relaxed whitespace-pre-line">{explanation}</p>
             </div>
@@ -72,7 +72,7 @@ export default function FeedbackModal({ isCorrect, explanation, score, onNext }:
             </motion.p>
 
             {/* 识破指南 */}
-            <div className="bg-wrong/5 border border-wrong/20 rounded-xl p-7">
+            <div className="bg-wrong/5 border border-wrong/20 rounded-xl p-4 sm:p-7">
               <p className="text-wrong text-lg font-medium mb-2">🧐 识破技巧：</p>
               <p className="text-text-secondary text-lg leading-relaxed whitespace-pre-line">{explanation}</p>
             </div>

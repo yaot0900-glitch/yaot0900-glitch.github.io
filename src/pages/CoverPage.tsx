@@ -198,7 +198,7 @@ export default function CoverPage() {
 
               {/* 副标题 */}
               <motion.p
-                className="text-[#94A3B8] text-base tracking-[0.25em] mb-3"
+                className="text-[#94A3B8] text-base lg:text-2xl tracking-[0.25em] mb-3 lg:mb-5 lg:leading-relaxed"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 1.4, duration: 0.8 }}
@@ -216,7 +216,7 @@ export default function CoverPage() {
 
               {/* 标语 */}
               <motion.p
-                className="text-[#94A3B8]/70 text-sm tracking-wider mb-10"
+                className="text-[#94A3B8]/70 text-sm lg:text-xl tracking-wider mb-10 lg:mb-14 lg:leading-relaxed"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 2.0, duration: 0.6 }}

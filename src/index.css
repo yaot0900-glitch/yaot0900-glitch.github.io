@@ -392,3 +392,12 @@ h3, .h3 {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.25); }
 }
+
+/* ✨ 文字循环发光 — 科技感呼吸效果 */
+@keyframes textGlow {
+  0%, 100% { text-shadow: 0 0 4px rgba(240,107,4,0.25), 0 0 8px rgba(240,107,4,0.10); }
+  50% { text-shadow: 0 0 12px rgba(240,107,4,0.55), 0 0 24px rgba(240,107,4,0.25), 0 0 40px rgba(240,107,4,0.10); }
+}
+.glow-text {
+  animation: textGlow 2.5s ease-in-out infinite;
+}
