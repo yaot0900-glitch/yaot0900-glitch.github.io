@@ -115,16 +115,35 @@ export async function submitGameData(payload: GameDataPayload): Promise<boolean>
     return false
   }
 
+  const jsonBody = JSON.stringify(payload)
+  console.log('[数据收集] 准备提交，数据大小:', jsonBody.length, 'bytes')
+  console.log('[数据收集] 目标:', GOOGLE_SCRIPT_URL)
+
+  // 方案1：navigator.sendBeacon（最可靠，专为数据上报设计）
   try {
-    // Google Apps Script 使用 no-cors 模式 + 302 重定向，fetch 无法读取响应
-    // 因此使用 navigator.sendBeacon 或简单的 POST
+    const blob = new Blob([jsonBody], { type: 'text/plain;charset=utf-8' })
+    const sent = navigator.sendBeacon(GOOGLE_SCRIPT_URL, blob)
+    if (sent) {
+      console.log('[数据收集] sendBeacon 提交成功')
+      return true
+    }
+    console.warn('[数据收集] sendBeacon 未成功排队，尝试 fetch...')
+  } catch (err) {
+    console.warn('[数据收集] sendBeacon 失败:', err)
+  }
+
+  // 方案2：fetch POST（备用）
+  try {
+    const formData = new URLSearchParams()
+    formData.append('payload', jsonBody)
+
     await fetch(GOOGLE_SCRIPT_URL, {
       method: 'POST',
       mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(payload),
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8' },
+      body: formData.toString(),
     })
-    console.log('[数据收集] 提交成功')
+    console.log('[数据收集] fetch 提交完成')
     return true
   } catch (err) {
     console.warn('[数据收集] 提交失败（不影响游戏）:', err)

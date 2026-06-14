@@ -30,4 +30,4 @@ export const POST_TEST_QR = 'images/qr-post-test.png' // 二维码图片暂未�
  *
  * 详见 docs/google-sheets-setup.md
  */
-export const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwZmZfiyIXFkOnHAm-NKHtJWNPMQyakj7FgJs0VwMn2tQL0exT_qBK2yVyaFfCJdAR9/exec'
+export const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwyFcrwzjvqEy2X-E8ebY9FoT_aH2-VpQTOD_sWsC01aEShSPBEZXDkA4NdkEVbsQiL/exec'

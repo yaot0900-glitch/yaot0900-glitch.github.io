@@ -33,7 +33,20 @@ Q: 是否复活
 ```javascript
 function doPost(e) {
   try {
-    const data = JSON.parse(e.postData.contents);
+    // 兼容两种格式：
+    // 1. sendBeacon → text/plain 原始 JSON
+    // 2. fetch fallback → application/x-www-form-urlencoded (payload=JSON)
+    let raw = e.postData.contents;
+    let data;
+
+    if (raw.startsWith('payload=')) {
+      // URL-encoded 格式
+      data = JSON.parse(decodeURIComponent(raw.substring(8)));
+    } else {
+      // 纯 JSON 格式
+      data = JSON.parse(raw);
+    }
+
     const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
 
     const rows = [];
