@@ -3,12 +3,35 @@ import { motion } from 'framer-motion'
 import { useGame } from '../hooks/useGame'
 import { getRank } from '../utils/scoring'
 import Button from '../components/Button'
+import type { Track } from '../context/GameContext'
+
+const TRACK_LABELS: Record<Track, string> = {
+  health: '健康科普',
+  culture: '文化娱乐',
+  politics: '时政社会',
+}
+
+const TRACK_EMOJI: Record<Track, string> = {
+  health: '🏥',
+  culture: '🎭',
+  politics: '🏛️',
+}
 
 export default function RewardPage() {
   const navigate = useNavigate()
-  const { state, totalScore, correctRate, totalCorrect } = useGame()
+  const { state, totalScore, correctRate, totalCorrect, getTrackStats, getTrackScore } = useGame()
   const rank = getRank(totalScore)
   const totalAnswered = state.answers.length
+
+  // 三个赛道的统计数据
+  const tracks: Track[] = ['health', 'culture', 'politics']
+  const trackData = tracks.map(track => ({
+    track,
+    label: TRACK_LABELS[track],
+    emoji: TRACK_EMOJI[track],
+    stats: getTrackStats(track),
+    score: getTrackScore(track),
+  }))
 
   const handleChallenge = () => {
     navigate('/level2-invite')
@@ -68,25 +91,52 @@ export default function RewardPage() {
         <p className="text-text-secondary text-base mb-8">{rank.comment}</p>
       </motion.div>
 
-      {/* 数据卡片 */}
+      {/* 三赛道成绩卡片 */}
       <motion.div
-        className="glass-card w-full max-w-sm p-7 mb-8"
+        className="glass-card w-full max-w-sm p-5 mb-6"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1.2 }}
+        transition={{ delay: 1.0 }}
       >
-        <div className="grid grid-cols-3 gap-5 text-center">
+        <h3 className="text-base font-bold text-accent mb-4">📊 赛道成绩总览</h3>
+        <div className="space-y-3">
+          {trackData.map((td, i) => (
+            <motion.div
+              key={td.track}
+              className="flex items-center gap-3 bg-[#F1F5F9] rounded-xl p-3"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 1.2 + i * 0.15 }}
+            >
+              <span className="text-xl">{td.emoji}</span>
+              <div className="flex-1 text-left">
+                <p className="text-text-primary text-sm font-medium">{td.label}</p>
+                <p className="text-text-muted text-xs">
+                  {td.stats.correct}/{td.stats.total} 正确
+                  {td.stats.correct === 5 && <span className="text-gold ml-1">⭐完美</span>}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-lg font-bold text-accent">{td.score}</p>
+                <p className="text-text-muted text-xs">分</p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* 总计 */}
+        <div className="border-t border-[#E8DDD0] mt-4 pt-4 grid grid-cols-3 gap-3 text-center">
           <div>
-            <p className="text-3xl font-bold text-gold">{totalScore}</p>
-            <p className="text-text-muted text-sm">总分</p>
+            <p className="text-2xl font-bold text-gold">{totalScore}</p>
+            <p className="text-text-muted text-xs">总分</p>
           </div>
           <div>
-            <p className="text-3xl font-bold text-correct">{Math.round(correctRate * 100)}%</p>
-            <p className="text-text-muted text-sm">正确率</p>
+            <p className="text-2xl font-bold text-correct">{Math.round(correctRate * 100)}%</p>
+            <p className="text-text-muted text-xs">正确率</p>
           </div>
           <div>
-            <p className="text-3xl font-bold text-text-primary">{totalCorrect}/{totalAnswered}</p>
-            <p className="text-text-muted text-sm">正确/总题</p>
+            <p className="text-2xl font-bold text-text-primary">{totalCorrect}/{totalAnswered}</p>
+            <p className="text-text-muted text-xs">正确/总题</p>
           </div>
         </div>
       </motion.div>
@@ -104,9 +154,9 @@ export default function RewardPage() {
             <p className="text-text-muted text-sm mb-1.5">局长的评价</p>
             <p className="text-text-secondary text-base leading-relaxed">
               {correctRate >= 0.9
-                ? '出色的表现，探员！你展现出了非凡的洞察力。'
+                ? '出色的表现，探员！你展现出了非凡的洞察力，三个赛道都难不倒你。'
                 : correctRate >= 0.7
-                  ? '表现不错！你已经有了一双识别真相的眼睛。'
+                  ? '表现不错！你已经有了一双识别真相的眼睛，继续磨练会更出色。'
                   : correctRate >= 0.5
                     ? '良好的开端！辨别真假是一项需要练习的技能，你正在进步。'
                     : '每一位伟大的探员都从基础开始。今天的每一道题，都让你更接近真相。'}
@@ -131,7 +181,7 @@ export default function RewardPage() {
           <Button variant="secondary" className="w-full" onClick={handleReport}>
             📊 查看报告并退出
           </Button>
-          <p className="text-text-muted text-sm mt-1.5">直接查看你的媒体素养评估报告</p>
+          <p className="text-text-muted text-sm mt-1.5">查看你的媒体素养评估报告</p>
         </div>
       </motion.div>
     </motion.div>

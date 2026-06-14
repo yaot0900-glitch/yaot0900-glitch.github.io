@@ -19,7 +19,7 @@ const STORY_LINES = [
 
 export default function HomePage() {
   const navigate = useNavigate()
-  const { setName, state } = useGame()
+  const { setName, initGame, state } = useGame()
   const [displayedLines, setDisplayedLines] = useState(0)
   const [nameInput, setNameInput] = useState(state.playerName || '')
   const [showInput, setShowInput] = useState(false)
@@ -50,8 +50,9 @@ export default function HomePage() {
     }
     setError('')
     setName(trimmed)
-    navigate('/select')
-  }, [nameInput, setName, navigate])
+    initGame()
+    navigate('/pre-test-guide')
+  }, [nameInput, setName, initGame, navigate])
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') handleStart()

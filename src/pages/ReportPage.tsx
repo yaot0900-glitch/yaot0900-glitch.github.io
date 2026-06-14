@@ -1,17 +1,12 @@
-import { useMemo, useCallback } from 'react'
+import { useMemo, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useGame } from '../hooks/useGame'
 import { getRank, getPlayStyle, calcGenericRadarData } from '../utils/scoring'
+import { buildGameDataPayload, submitGameData } from '../utils/dataCollector'
 import RadarChart from '../components/RadarChart'
 import Button from '../components/Button'
 import type { Track } from '../context/GameContext'
-
-const TRACK_LABELS: Record<Track, string> = {
-  health: '健康信息辨别力',
-  culture: '文化娱乐辨别力',
-  politics: '时政信息辨别力',
-}
 
 const TRACK_EMOJI: Record<Track, string> = {
   health: '🏥',
@@ -19,21 +14,33 @@ const TRACK_EMOJI: Record<Track, string> = {
   politics: '🏛️',
 }
 
+const TRACK_SHORT: Record<Track, string> = {
+  health: '健康科普',
+  culture: '文化娱乐',
+  politics: '时政社会',
+}
+
+const TRACK_COLORS: Record<Track, string> = {
+  health: '#5EEAD4',
+  culture: '#C084FC',
+  politics: '#60A5FA',
+}
+
 export default function ReportPage() {
   const navigate = useNavigate()
-  const { state, totalScore, correctRate, totalCorrect, skipPostTest } = useGame()
+  const { state, totalScore, correctRate, totalCorrect } = useGame()
   const totalAnswered = state.answers.length
   const rank = getRank(totalScore)
 
-  // 5个通用雷达维度
+  // 雷达图（3赛道全部完成）
   const radarData = useMemo(() => {
     return calcGenericRadarData(
       state.answers,
       state.level2Score,
       state.level2Complete,
-      state.completedTracks.length
+      3 // 三个赛道必玩
     )
-  }, [state.answers, state.level2Score, state.level2Complete, state.completedTracks.length])
+  }, [state.answers, state.level2Score, state.level2Complete])
 
   // 辨别风格
   const allTimes = state.answers.map(a => 30 - a.remainingSeconds)
@@ -46,37 +53,41 @@ export default function ReportPage() {
     return radarData.reduce((prev, curr) => (curr.value < prev.value ? curr : prev))
   }, [radarData])
 
+  // 三赛道成绩
+  const tracks: Track[] = ['health', 'culture', 'politics']
+  const trackData = useMemo(() => {
+    return tracks.map(track => {
+      const trackAnswers = state.answers.filter(a => a.track === track)
+      const correct = trackAnswers.filter(a => a.isCorrect).length
+      const total = trackAnswers.length
+      const score = trackAnswers.reduce((sum, a) => sum + a.score, 0)
+      return { track, correct, total, score, rate: total > 0 ? correct / total : 0 }
+    })
+  }, [state.answers])
+
+  // 提交游戏数据到 Google Sheets
+  useEffect(() => {
+    const payload = buildGameDataPayload(
+      state.playerName,
+      state.participantId,
+      state.answers,
+      totalScore,
+      totalCorrect,
+      totalAnswered,
+      correctRate,
+      state.level2Complete,
+      state.level2Score,
+      state.credibility,
+      state.hasRevived
+    )
+    submitGameData(payload)
+  }, []) // 仅执行一次
+
   // 截图
   const handleScreenshot = useCallback(() => { window.print() }, [])
 
   // 后测
-  const handleStartPostTest = () => navigate('/select?mode=post')
-  const handleSkipPostTest = () => skipPostTest()
-  const showPostTestInvite = !state.postTestComplete && !state.postTestSkipped
-  const showPostTestResult = state.postTestComplete
-
-  // 后测对比数据
-  const postTestStats = useMemo(() => {
-    if (!state.postTestComplete || !state.postTestTrack) return null
-    const track = state.postTestTrack
-    const answers = state.postTestAnswers
-    const total = answers.length
-    const correct = answers.filter(a => a.isCorrect).length
-    const correctRateVal = total > 0 ? correct / total : 0
-    const score = state.postTestScore
-    const preTrackAnswers = state.answers.filter(a => a.track === track)
-    const preScore = preTrackAnswers.reduce((sum, a) => sum + a.score, 0)
-    const preCorrect = preTrackAnswers.filter(a => a.isCorrect).length
-    const preCorrectRateVal = preTrackAnswers.length > 0 ? preCorrect / preTrackAnswers.length : 0
-    const sameTrack = state.preTestTrack === track
-    return {
-      track, total, correct, correctRate: correctRateVal, score,
-      preScore, preCorrectRate: preCorrectRateVal, preCorrect, preTotal: preTrackAnswers.length,
-      sameTrack,
-      improvement: score - preScore,
-      rateChange: Math.round((correctRateVal - preCorrectRateVal) * 100),
-    }
-  }, [state.postTestComplete, state.postTestTrack, state.postTestAnswers, state.postTestScore, state.answers, state.preTestTrack])
+  const handleGoToPostTest = () => navigate('/post-test-guide')
 
   return (
     <motion.div
@@ -124,7 +135,7 @@ export default function ReportPage() {
           </motion.div>
         </div>
 
-        {/* 右：雷达图 — 深棕面板 */}
+        {/* 右：雷达图 */}
         <div className="w-full lg:flex-1">
           <motion.div
             className="card-dark text-center w-full lg:h-full lg:flex lg:flex-col lg:justify-center"
@@ -145,6 +156,47 @@ export default function ReportPage() {
           </motion.div>
         </div>
       </div>
+
+      {/* 三赛道成绩对比 */}
+      <motion.div
+        className="glass-card p-7 mb-6 w-full lg:max-w-5xl mx-auto"
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.5 }}
+      >
+        <h4 className="text-base font-bold text-center text-accent mb-4">📊 三赛道成绩对比</h4>
+        <div className="grid grid-cols-3 gap-3">
+          {trackData.map(td => (
+            <div
+              key={td.track}
+              className="bg-[#F1F5F9] rounded-xl p-4 text-center"
+            >
+              <p className="text-2xl mb-1">{TRACK_EMOJI[td.track]}</p>
+              <p className="text-text-primary text-sm font-medium mb-2">{TRACK_SHORT[td.track]}</p>
+              <p className="text-xl font-bold" style={{ color: TRACK_COLORS[td.track] }}>
+                {td.score}
+              </p>
+              <p className="text-text-muted text-xs">分</p>
+              <p className="text-text-secondary text-sm mt-1">
+                {td.correct}/{td.total} 正确
+              </p>
+              <p className="text-text-muted text-xs">
+                {Math.round(td.rate * 100)}%
+              </p>
+              {td.correct === 5 && (
+                <p className="text-gold text-xs mt-1">⭐ 完美</p>
+              )}
+            </div>
+          ))}
+        </div>
+        <div className="text-center mt-4 pt-4 border-t border-[#E8DDD0]">
+          <p className="text-text-secondary text-sm">
+            综合正确率：<span className="text-accent font-bold">{Math.round(correctRate * 100)}%</span>
+            {' · '}
+            总分：<span className="text-accent font-bold">{totalScore}</span>
+          </p>
+        </div>
+      </motion.div>
 
       {/* 风格 + 最弱维度 */}
       <div className="w-full lg:flex lg:gap-5 lg:max-w-5xl lg:mx-auto lg:items-stretch">
@@ -181,97 +233,6 @@ export default function ReportPage() {
           </div>
         </motion.div>
       </div>
-
-      {/* 后测对比结果 */}
-      {showPostTestResult && postTestStats && (
-        <motion.div
-          className="glass-card p-7 mb-6 w-full lg:max-w-5xl mx-auto border-accent/20"
-          initial={{ y: 20, opacity: 0, scale: 0.95 }}
-          animate={{ y: 0, opacity: 1, scale: 1 }}
-          transition={{ delay: 0.8, duration: 0.5 }}
-        >
-          <h4 className="text-base font-bold text-center text-accent mb-4">📊 前后测对比报告</h4>
-          <div className="grid grid-cols-2 gap-5 mb-5">
-            <div className="bg-[#F1F5F9] rounded-xl p-4 text-center">
-              <p className="text-text-muted text-base mb-1.5">前测</p>
-              <p className="text-xl font-bold">
-                {TRACK_EMOJI[postTestStats.track]} {postTestStats.preCorrect}/{postTestStats.preTotal}
-              </p>
-              <p className="text-text-muted text-base">
-                {postTestStats.preScore} 分 · {Math.round(postTestStats.preCorrectRate * 100)}%
-              </p>
-            </div>
-            <div className="bg-accent/10 rounded-xl p-4 text-center">
-              <p className="text-text-muted text-base mb-1.5">后测</p>
-              <p className="text-xl font-bold text-accent">
-                {TRACK_EMOJI[postTestStats.track]} {postTestStats.correct}/{postTestStats.total}
-              </p>
-              <p className="text-accent text-base">
-                {postTestStats.score} 分 · {Math.round(postTestStats.correctRate * 100)}%
-              </p>
-            </div>
-          </div>
-          <div className="text-center mb-5">
-            {postTestStats.improvement > 0 ? (
-              <>
-                <p className="text-correct text-xl font-bold">
-                  📈 提升 +{postTestStats.improvement} 分 (+{postTestStats.rateChange}%)
-                </p>
-                <div className="text-4xl mt-1.5">🎖️</div>
-                <p className="text-accent text-base font-medium mt-1.5">获得「进步之星」徽章</p>
-              </>
-            ) : postTestStats.improvement === 0 ? (
-              <p className="text-wrong text-base">📊 成绩持平，保持练习！</p>
-            ) : (
-              <p className="text-text-secondary text-base">🔄 后测题目可能难度稍高，继续加油！</p>
-            )}
-          </div>
-          {!postTestStats.sameTrack && (
-            <div className="bg-wrong/5 border border-wrong/10 rounded-xl p-4 text-center mb-4">
-              <p className="text-wrong text-base">⚠️ 前后测赛道不同，对比结果可能存在偏差</p>
-            </div>
-          )}
-          <div className="bg-[#F1F5F9] rounded-xl p-4 text-center">
-            <p className="text-text-secondary text-base italic">
-              {postTestStats.improvement > 0
-                ? '"看，我说过吧——辨别力是可以练出来的！但别骄傲，还有很长的路要走 😉"'
-                : '"每一次判断都是学习，今天的你比昨天更了解真相。休息一下，再试一次？"'}
-            </p>
-            <p className="text-text-muted text-xs mt-1">—— 迷雾AI（已暂时被压制）</p>
-          </div>
-        </motion.div>
-      )}
-
-      {/* 后测邀请 */}
-      {showPostTestInvite && (
-        <motion.div
-          className="glass-card p-7 mb-6 w-full lg:max-w-5xl mx-auto border-accent/10"
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 1.0 }}
-        >
-          <div className="text-center">
-            <p className="text-4xl mb-2">📈</p>
-            <h4 className="text-lg font-bold text-accent mb-2">后测挑战（可选）</h4>
-            <p className="text-text-secondary text-base mb-1.5">再来一轮，看看你的辨别力有没有进步？</p>
-            <p className="text-text-muted text-base mb-4">后测采用同样格式、同样赛道，便于科学对比前后变化</p>
-            {state.preTestTrack && (
-              <p className="text-accent text-base mb-4">
-                💡 推荐选择与前测相同的赛道（{TRACK_EMOJI[state.preTestTrack]} {TRACK_LABELS[state.preTestTrack]}），对比更准确
-              </p>
-            )}
-            <div className="space-y-3">
-              <Button variant="primary" className="w-full" onClick={handleStartPostTest}>📝 开始后测</Button>
-              <button
-                className="w-full text-text-muted text-base underline underline-offset-4 hover:text-text-secondary transition-colors py-2"
-                onClick={handleSkipPostTest}
-              >
-                跳过，直接结束
-              </button>
-            </div>
-          </div>
-        </motion.div>
-      )}
 
       {/* 提升建议 */}
       <motion.div
@@ -322,7 +283,10 @@ export default function ReportPage() {
 
       {/* 按钮 */}
       <div className="w-full lg:max-w-5xl mx-auto space-y-4">
-        <Button variant="primary" className="w-full" onClick={handleScreenshot}>
+        <Button variant="primary" className="w-full" onClick={handleGoToPostTest}>
+          📋 完成后测问卷
+        </Button>
+        <Button variant="secondary" className="w-full" onClick={handleScreenshot}>
           📸 保存报告图片
         </Button>
         {!state.level2Complete && (

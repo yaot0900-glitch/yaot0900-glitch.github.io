@@ -281,11 +281,27 @@ export default function AiTextPage() {
 
   return (
     <div className="page-container py-4">
+      {/* 手机端：紧凑顶栏 */}
+      <div className="lg:hidden w-full max-w-md mx-auto mb-4">
+        <MobileStatusBar
+          key={timerKey}
+          seconds={TIME_LIMIT}
+          running={timerRunning}
+          onTimeout={handleTimeout}
+          credibility={credibility}
+        />
+        <div className="text-center mt-2">
+          <span className="text-text-muted text-sm">
+            🤖 AI文字侦探 · {qIndex + 1}/{questions.length}
+          </span>
+        </div>
+      </div>
+
       {/* 桌面双栏 */}
       <div className="w-full max-w-md mx-auto lg:max-w-none lg:flex lg:gap-6 lg:items-start">
         {/* 左侧：主内容 */}
         <div className="lg:flex-[0.65] lg:min-w-0">
-          <div className="mb-3">
+          <div className="hidden lg:block mb-3">
             <p className="text-text-secondary text-sm text-center">
               🤖 AI 迷雾核心 · Part B：AI消息解码 · {qIndex + 1}/{questions.length}
             </p>
@@ -362,19 +378,7 @@ export default function AiTextPage() {
         </div>
       </div>
 
-      {/* 手机端：紧凑顶栏（倒计时 + 信誉度合并） */}
-      <div className="lg:hidden w-full max-w-md mx-auto mb-4">
-        <MobileStatusBar
-          key={timerKey}
-          seconds={TIME_LIMIT}
-          running={timerRunning}
-          onTimeout={handleTimeout}
-          credibility={credibility}
-        />
-        <div className="text-center mt-2">
-          <span className="text-text-muted text-sm">🤖 AI消息解码 · 第 {qIndex + 1}/{questions.length} 题</span>
-        </div>
-      </div>
+
 
       <AnimatePresence>
         {showFeedback && lastResult && (

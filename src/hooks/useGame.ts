@@ -3,6 +3,16 @@ import { useGameContext, type Track, type Answer } from '../context/GameContext'
 import { calcQuestionScore, calcTrackBonus } from '../utils/scoring'
 import questionBank from '../data/questions.json'
 
+/** 生成唯一参与者编号 */
+function generateParticipantId(): string {
+  const chars = '23456789ABCDEFGHJKMNPQRSTUVWXYZ' // 排除 O/0/I/1/L
+  let id = ''
+  for (let i = 0; i < 4; i++) {
+    id += chars[Math.floor(Math.random() * chars.length)]
+  }
+  return `P-${id}`
+}
+
 /** Fisher-Yates 洗牌 */
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr]
@@ -13,12 +23,15 @@ function shuffle<T>(arr: T[]): T[] {
   return a
 }
 
-/** 从赛道全题库中随机分配前测5题+后测5题 */
-function splitTrackQuestions(track: Track): { pre: number[]; post: number[] } {
-  const trackData = (questionBank as unknown as Record<string, { questions: { id: number }[] }>)[track]
-  const ids = trackData.questions.map(q => q.id)
-  const shuffled = shuffle(ids)
-  return { pre: shuffled.slice(0, 5), post: shuffled.slice(5, 10) }
+/** 为所有3个赛道各随机分配5题 */
+function assignAllTrackQuestions(): Record<Track, number[]> {
+  const tracks: Track[] = ['health', 'culture', 'politics']
+  const result: Record<string, number[]> = {}
+  for (const track of tracks) {
+    const allIds = (questionBank as unknown as Record<string, { questions: { id: number }[] }>)[track]?.questions.map(q => q.id) || []
+    result[track] = shuffle(allIds).slice(0, 5)
+  }
+  return result as Record<Track, number[]>
 }
 
 export function useGame() {
@@ -29,15 +42,20 @@ export function useGame() {
     dispatch({ type: 'SET_NAME', payload: name })
   }, [dispatch])
 
-  /** 选择赛道并开始答题（随机抽5题作为前测） */
+  /** 初始化游戏：生成参与者编号，为3个赛道随机分配题目 */
+  const initGame = useCallback(() => {
+    const participantId = generateParticipantId()
+    const trackQuestionIds = assignAllTrackQuestions()
+    dispatch({ type: 'INIT_GAME', payload: { participantId, trackQuestionIds } })
+  }, [dispatch])
+
+  /** 选择要玩的赛道 */
   const selectTrack = useCallback((track: Track) => {
-    const split = splitTrackQuestions(track)
-    dispatch({ type: 'SET_TRACK_QUESTIONS', payload: { track, pre: split.pre, post: split.post } })
     dispatch({ type: 'SELECT_TRACK', payload: track })
   }, [dispatch])
 
-  /** 提交一道题的答案 */
-  const submitAnswer = useCallback((
+  /** 提交当前赛道的一道题答案 */
+  const submitTrackAnswer = useCallback((
     questionId: number,
     track: Track,
     playerAnswer: boolean,
@@ -57,14 +75,35 @@ export function useGame() {
       score: total,
     }
 
-    dispatch({ type: 'ANSWER_QUESTION', payload: answer })
+    dispatch({ type: 'ANSWER_TRACK_QUESTION', payload: answer })
     return { isCorrect, score: total }
   }, [dispatch])
 
-  /** 完成当前赛道 */
-  const completeTrack = useCallback(() => {
-    dispatch({ type: 'COMPLETE_TRACK' })
+  /** 完成当前赛道，自动进入下一赛道或进入奖励 */
+  const completeCurrentTrack = useCallback(() => {
+    dispatch({ type: 'COMPLETE_CURRENT_TRACK' })
   }, [dispatch])
+
+  /** 获取当前赛道应展示的题目ID列表 */
+  const getCurrentTrackQuestionIds = useCallback((): number[] => {
+    if (!state.currentTrack) return []
+    return state.trackQuestionIds[state.currentTrack] || []
+  }, [state.currentTrack, state.trackQuestionIds])
+
+  /** 获取指定赛道的得分 */
+  const getTrackScore = useCallback((track: Track): number => {
+    return state.answers
+      .filter(a => a.track === track)
+      .reduce((sum, a) => sum + a.score, 0)
+  }, [state.answers])
+
+  /** 获取指定赛道的正确率 */
+  const getTrackStats = useCallback((track: Track) => {
+    const trackAnswers = state.answers.filter(a => a.track === track)
+    const correct = trackAnswers.filter(a => a.isCorrect).length
+    const total = trackAnswers.length
+    return { correct, total, rate: total > 0 ? correct / total : 0 }
+  }, [state.answers])
 
   /** 获取当前赛道结算奖励 */
   const getTrackBonus = useCallback(() => {
@@ -74,12 +113,11 @@ export function useGame() {
     const correct = trackAnswers.filter(a => a.isCorrect).length
     const total = state.questionsPerTrack
 
-    // 获取当前信誉值（赛道结束时）
     return calcTrackBonus(correct, total, state.credibility)
   }, [state.answers, state.currentTrack, state.credibility, state.questionsPerTrack])
 
   /** 跳转到指定页面 */
-  const goTo = useCallback((phase: 'home' | 'trackSelect' | 'quiz' | 'reward' | 'level2Invite' | 'level2Image' | 'level2Text' | 'skipEnd' | 'report') => {
+  const goTo = useCallback((phase: 'home' | 'preTestGuide' | 'trackSelect' | 'quiz' | 'reward' | 'level2Invite' | 'level2Image' | 'level2Text' | 'skipEnd' | 'report' | 'postTestGuide') => {
     dispatch({ type: 'GO_TO_PHASE', payload: phase })
   }, [dispatch])
 
@@ -106,58 +144,13 @@ export function useGame() {
     dispatch({ type: 'RESET_GAME' })
   }, [dispatch])
 
-  // ---- 后测操作 ----
-
-  /** 开始后测（选择赛道，使用已分配的后测题目或重新分配） */
-  const startPostTest = useCallback((track: Track) => {
-    // 如果该赛道已有分配（同赛道后测），使用已存储的；否则重新分配
-    if (!state.trackQuestionMap[track]) {
-      const split = splitTrackQuestions(track)
-      dispatch({ type: 'SET_TRACK_QUESTIONS', payload: { track, pre: split.pre, post: split.post } })
-    }
-    dispatch({ type: 'START_POST_TEST', payload: track })
-  }, [dispatch, state.trackQuestionMap])
-
-  /** 提交后测答案 */
-  const submitPostTestAnswer = useCallback((
-    questionId: number,
-    track: Track,
-    playerAnswer: boolean,
-    correctAnswer: boolean,
-    remainingSeconds: number
-  ) => {
-    const isCorrect = playerAnswer === correctAnswer
-    const { total } = calcQuestionScore(isCorrect, remainingSeconds)
-
-    const answer: Answer = {
-      questionId,
-      track,
-      playerAnswer,
-      correctAnswer,
-      isCorrect,
-      remainingSeconds,
-      score: total,
-    }
-
-    dispatch({ type: 'ANSWER_POST_TEST', payload: answer })
-    return { isCorrect, score: total }
-  }, [dispatch])
-
-  /** 完成后测 */
-  const completePostTest = useCallback(() => {
-    dispatch({ type: 'COMPLETE_POST_TEST' })
-  }, [dispatch])
-
-  /** 跳过后测 */
-  const skipPostTest = useCallback(() => {
-    dispatch({ type: 'SKIP_POST_TEST' })
-  }, [dispatch])
+  // ---- 衍生数据 ----
 
   /** 当前赛道是否全部答完 */
   const isTrackDone = state.currentQuestionIndex >= state.questionsPerTrack
 
-  /** 所有赛道是否完成（3选1：完成1个即达标） */
-  const allTracksDone = state.completedTracks.length >= 1
+  /** 所有赛道是否完成 */
+  const allTracksDone = state.completedTracks.length >= 3
 
   /** 获取总正确数 */
   const totalCorrect = state.answers.filter(a => a.isCorrect).length
@@ -180,23 +173,16 @@ export function useGame() {
     return score + state.level2Score
   })()
 
-  /** 当前是否处于后测答题模式 */
-  const isPostTestMode = state.postTestTrack !== null && !state.postTestComplete
-
-  /** 获取当前赛道/阶段应展示的题目ID列表 */
-  const getCurrentQuestionIds = useCallback((): number[] => {
-    if (!state.currentTrack) return []
-    const map = state.trackQuestionMap[state.currentTrack]
-    if (!map) return []
-    return isPostTestMode ? map.post : map.pre
-  }, [state.currentTrack, state.trackQuestionMap, isPostTestMode])
-
   return {
     state,
     setName,
+    initGame,
     selectTrack,
-    submitAnswer,
-    completeTrack,
+    submitTrackAnswer,
+    completeCurrentTrack,
+    getCurrentTrackQuestionIds,
+    getTrackScore,
+    getTrackStats,
     getTrackBonus,
     goTo,
     revive,
@@ -204,14 +190,7 @@ export function useGame() {
     completeLevel2,
     addLevel2Score,
     resetGame,
-    // 后测
-    startPostTest,
-    submitPostTestAnswer,
-    completePostTest,
-    skipPostTest,
-    isPostTestMode,
-    getCurrentQuestionIds,
-    // 通用
+    // 衍生
     isTrackDone,
     allTracksDone,
     totalCorrect,

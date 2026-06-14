@@ -220,12 +220,28 @@ export default function AiImagePage() {
 
   return (
     <div className="page-container py-4">
+      {/* 手机端：紧凑顶栏 */}
+      <div className="lg:hidden w-full max-w-md mx-auto mb-4">
+        <MobileStatusBar
+          key={timerKey}
+          seconds={TIME_LIMIT}
+          running={timerRunning}
+          onTimeout={handleTimeout}
+          credibility={credibility}
+        />
+        <div className="text-center mt-2">
+          <span className="text-text-muted text-sm">
+            🤖 AI图片侦探 · {qIndex + 1}/{questions.length}
+          </span>
+        </div>
+      </div>
+
       {/* 桌面双栏 */}
       <div className="w-full max-w-md mx-auto lg:max-w-none lg:flex lg:gap-6 lg:items-start">
         {/* 左侧：主内容 */}
         <div className="lg:flex-[0.65] lg:min-w-0">
-          {/* 进度 */}
-          <div className="mb-3">
+          {/* 进度（桌面端） */}
+          <div className="hidden lg:block mb-3">
             <p className="text-text-secondary text-sm text-center">
               🤖 AI 迷雾核心 · Part A：AI图片侦探 · {qIndex + 1}/{questions.length}
             </p>
@@ -341,20 +357,6 @@ export default function AiImagePage() {
             <p className="text-text-secondary text-base">🤖 AI图片侦探</p>
             <p className="text-text-muted text-sm mt-1">第 {qIndex + 1}/{questions.length} 题</p>
           </div>
-        </div>
-      </div>
-
-      {/* 手机端：紧凑顶栏（倒计时 + 信誉度合并） */}
-      <div className="lg:hidden w-full max-w-md mx-auto mb-4">
-        <MobileStatusBar
-          key={timerKey}
-          seconds={TIME_LIMIT}
-          running={timerRunning}
-          onTimeout={handleTimeout}
-          credibility={credibility}
-        />
-        <div className="text-center mt-2">
-          <span className="text-text-muted text-sm">🤖 AI图片侦探 · 第 {qIndex + 1}/{questions.length} 题</span>
         </div>
       </div>
 

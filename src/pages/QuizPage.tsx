@@ -13,7 +13,6 @@ import type { Track } from '../context/GameContext'
 
 const TIME_LIMIT = 30
 
-// 问题数据接口
 interface QuestionData {
   id: number
   track: string
@@ -26,15 +25,18 @@ interface QuestionData {
   tip: string
 }
 
+const TRACK_NAMES: Record<string, string> = { health: '健康科普', culture: '文化娱乐', politics: '时政社会' }
+const TRACK_EMOJI: Record<string, string> = { health: '🏥', culture: '🎭', politics: '🏛️' }
+
 export default function QuizPage() {
   const navigate = useNavigate()
-  const { state, submitAnswer, completeTrack, submitPostTestAnswer, completePostTest, revive, isPostTestMode, getCurrentQuestionIds } = useGame()
+  const { state, submitTrackAnswer, completeCurrentTrack, revive, getCurrentTrackQuestionIds } = useGame()
 
   const track = state.currentTrack
   const index = state.currentQuestionIndex
 
   // 获取当前赛道随机分配的题目
-  const questionIds = getCurrentQuestionIds()
+  const questionIds = getCurrentTrackQuestionIds()
   const trackQuestions = useMemo(() => {
     if (!track || questionIds.length === 0) return []
     const all = (questionBank as unknown as Record<string, { questions: QuestionData[] }>)[track]?.questions || []
@@ -43,9 +45,10 @@ export default function QuizPage() {
 
   const totalQuestions = trackQuestions.length
   const currentQuestion = trackQuestions[index]
+  const trackIndex = state.completedTracks.length // 已完成赛道数 = 当前是第几个赛道 (0/1/2)
 
   // 倒计时相关
-  const [timerKey, setTimerKey] = useState(0)
+  const timerKey = `${state.currentTrack}-${state.currentQuestionIndex}`
   const [timerRunning, setTimerRunning] = useState(true)
   const [remainingSeconds, setRemainingSeconds] = useState(TIME_LIMIT)
 
@@ -56,10 +59,13 @@ export default function QuizPage() {
   // 复活弹窗
   const [showRevive, setShowRevive] = useState(false)
 
-  // 如果没选赛道或题目不存在，返回选择页
+  // 显示赛道完成总结
+  const [showTrackSummary, setShowTrackSummary] = useState(false)
+
+  // 如果没选赛道或题目不存在，返回首页
   useEffect(() => {
     if (!track) {
-      navigate('/select')
+      navigate('/home')
     }
   }, [track, navigate])
 
@@ -67,7 +73,15 @@ export default function QuizPage() {
   useEffect(() => {
     if (state.phase === 'reward') navigate('/reward')
     if (state.phase === 'report') navigate('/report')
+    if (state.phase === 'trackSelect') navigate('/select')
   }, [state.phase, navigate])
+
+  // 赛道切换时重置计时器
+  useEffect(() => {
+    setTimerRunning(true)
+    setRemainingSeconds(TIME_LIMIT)
+    setShowTrackSummary(false)
+  }, [state.currentTrack])
 
   // 答题处理
   const handleAnswer = useCallback((playerAnswer: boolean) => {
@@ -75,9 +89,7 @@ export default function QuizPage() {
 
     setTimerRunning(false)
 
-    // 根据前测/后测使用不同的提交函数
-    const submitFn = isPostTestMode ? submitPostTestAnswer : submitAnswer
-    const result = submitFn(
+    const result = submitTrackAnswer(
       currentQuestion.id,
       currentQuestion.track as Track,
       playerAnswer,
@@ -91,8 +103,8 @@ export default function QuizPage() {
       score: result.score,
     })
 
-    // 如果答错了且信誉值降到0，触发复活（仅前测）
-    if (!isPostTestMode && !result.isCorrect && state.credibility <= 1 && !state.hasRevived) {
+    // 答错且信誉值降到0 → 复活
+    if (!result.isCorrect && state.credibility <= 1 && !state.hasRevived) {
       setTimeout(() => {
         setShowRevive(true)
         setShowFeedback(false)
@@ -100,7 +112,7 @@ export default function QuizPage() {
     } else {
       setShowFeedback(true)
     }
-  }, [currentQuestion, showFeedback, isPostTestMode, submitAnswer, submitPostTestAnswer, remainingSeconds, state.credibility, state.hasRevived])
+  }, [currentQuestion, showFeedback, submitTrackAnswer, remainingSeconds, state.credibility, state.hasRevived])
 
   // 超时处理
   const handleTimeout = useCallback(() => {
@@ -108,8 +120,7 @@ export default function QuizPage() {
     setTimerRunning(false)
 
     if (currentQuestion) {
-      const submitFn = isPostTestMode ? submitPostTestAnswer : submitAnswer
-      submitFn(
+      submitTrackAnswer(
         currentQuestion.id,
         currentQuestion.track as Track,
         true,
@@ -124,36 +135,40 @@ export default function QuizPage() {
       })
       setShowFeedback(true)
     }
-  }, [currentQuestion, showFeedback, isPostTestMode, submitAnswer, submitPostTestAnswer])
+  }, [currentQuestion, showFeedback, submitTrackAnswer])
 
-  // 下一题
+  // 下一题 / 赛道完成
   const handleNext = useCallback(() => {
     setShowFeedback(false)
     setLastResult(null)
 
     if (index + 1 >= totalQuestions) {
-      // 赛道完成 — 根据前测/后测调用不同的完成函数
-      if (isPostTestMode) {
-        completePostTest()
-      } else {
-        completeTrack()
-      }
-    } else {
-      // 重置计时器
-      setTimerKey(k => k + 1)
-      setTimerRunning(true)
-      setRemainingSeconds(TIME_LIMIT)
+      // 当前赛道完成 → 显示赛道总结
+      setShowTrackSummary(true)
     }
-  }, [index, totalQuestions, isPostTestMode, completeTrack, completePostTest])
+  }, [index, totalQuestions])
+
+  // 赛道总结后继续
+  const handleContinueToNextTrack = useCallback(() => {
+    setShowTrackSummary(false)
+    completeCurrentTrack()
+  }, [completeCurrentTrack])
 
   // 复活处理
   const handleRevive = useCallback(() => {
     revive()
     setShowRevive(false)
-    setTimerKey(k => k + 1)
     setTimerRunning(true)
     setRemainingSeconds(TIME_LIMIT)
   }, [revive])
+
+  // 当前赛道得分统计
+  const trackStats = useMemo(() => {
+    const trackAnswers = state.answers.filter(a => a.track === track)
+    const correct = trackAnswers.filter(a => a.isCorrect).length
+    const score = trackAnswers.reduce((sum, a) => sum + a.score, 0)
+    return { correct, total: trackAnswers.length, score }
+  }, [state.answers, track])
 
   // 如果当前没有题目，显示过渡
   if (!currentQuestion) {
@@ -164,21 +179,34 @@ export default function QuizPage() {
     )
   }
 
-  const trackNames: Record<string, string> = { health: '健康科普', culture: '文化娱乐', politics: '时政社会' }
-  const phaseLabel = isPostTestMode ? '后测' : ''
-
   return (
     <div className="page-container py-4">
+      {/* 手机端：紧凑顶栏（题目上方）*/}
+      <div className="lg:hidden w-full max-w-md mx-auto mb-4">
+        <MobileStatusBar
+          key={timerKey}
+          seconds={TIME_LIMIT}
+          running={timerRunning}
+          onTimeout={handleTimeout}
+          credibility={state.credibility}
+        />
+        <div className="text-center mt-2">
+          <span className="text-text-muted text-sm">
+            {TRACK_EMOJI[track || '']} {track ? TRACK_NAMES[track] : ''} · 第{index + 1}/{totalQuestions}题 · {state.score} 分
+          </span>
+        </div>
+      </div>
+
       {/* 桌面双栏布局 */}
       <div className="w-full max-w-md mx-auto lg:max-w-none lg:flex lg:gap-6 lg:items-start">
         {/* 左侧：题目区域 */}
         <div className="lg:flex-[0.65] lg:min-w-0">
-          {/* 顶部提示 */}
-          {isPostTestMode && (
-            <div className="w-full mb-3 px-3 py-1.5 rounded-lg bg-gold/5 border border-gold/10 text-center">
-              <p className="text-gold text-xs">📈 后测模式 · 考察你的进步</p>
-            </div>
-          )}
+          {/* 顶部赛道信息（桌面端显示） */}
+          <div className="hidden lg:block w-full mb-3 px-3 py-1.5 rounded-lg bg-accent/5 border border-accent/10 text-center">
+            <p className="text-accent text-xs">
+              {TRACK_EMOJI[track || '']} {TRACK_NAMES[track || '']} · 第{trackIndex + 1}/3赛道
+            </p>
+          </div>
 
           {/* 题目卡片 */}
           <motion.div
@@ -227,43 +255,22 @@ export default function QuizPage() {
 
         {/* 右侧：状态面板（桌面端显示）*/}
         <div className="hidden lg:block lg:flex-[0.35] lg:min-w-0 space-y-14">
-          {/* 信誉值卡片 */}
           <CredibilityStars current={state.credibility} />
-
-          {/* 倒计时卡片 */}
           <CountdownBar
             key={timerKey}
             seconds={TIME_LIMIT}
             running={timerRunning}
             onTimeout={handleTimeout}
           />
-
-          {/* 当前信息 */}
           <div className="card-info text-center">
             <p className="text-text-secondary text-base">
-              🏷️ {track ? trackNames[track] : ''} · 第{index + 1}/{totalQuestions}题
+              {TRACK_EMOJI[track || '']} {track ? TRACK_NAMES[track] : ''} · 第{index + 1}/{totalQuestions}题
             </p>
             <p className="text-3xl font-bold text-accent mt-1.5">{state.score} 分</p>
             <p className="text-text-muted text-sm mt-0.5">
-              {phaseLabel || '📋 前测模式'}
+              第{trackIndex + 1}/3赛道
             </p>
           </div>
-        </div>
-      </div>
-
-      {/* 手机端：紧凑顶栏（倒计时 + 信誉度合并） */}
-      <div className="lg:hidden w-full max-w-md mx-auto mb-4">
-        <MobileStatusBar
-          key={timerKey}
-          seconds={TIME_LIMIT}
-          running={timerRunning}
-          onTimeout={handleTimeout}
-          credibility={state.credibility}
-        />
-        <div className="text-center mt-2">
-          <span className="text-text-muted text-sm">
-            🏷️ {track ? trackNames[track] : ''} · 第{index + 1}/{totalQuestions}题 · {state.score} 分
-          </span>
         </div>
       </div>
 
@@ -276,6 +283,59 @@ export default function QuizPage() {
             score={lastResult.score}
             onNext={handleNext}
           />
+        )}
+      </AnimatePresence>
+
+      {/* 赛道完成总结弹窗 */}
+      <AnimatePresence>
+        {showTrackSummary && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+            <motion.div
+              className="relative glass-card max-w-sm mx-4 p-6 text-center"
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              transition={{ type: 'spring' }}
+            >
+              <div className="text-4xl mb-2">
+                {trackStats.correct >= 4 ? '🌟' : trackStats.correct >= 3 ? '👍' : '💪'}
+              </div>
+              <h3 className="text-lg font-bold text-accent mb-2">
+                赛道{trackIndex + 1}完成！
+              </h3>
+              <p className="text-text-secondary text-sm mb-1">
+                {TRACK_EMOJI[track || '']} {TRACK_NAMES[track || '']}
+              </p>
+              <div className="grid grid-cols-3 gap-3 my-4">
+                <div>
+                  <p className="text-2xl font-bold text-accent">{trackStats.score}</p>
+                  <p className="text-text-muted text-xs">得分</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-correct">{trackStats.correct}/{trackStats.total}</p>
+                  <p className="text-text-muted text-xs">正确</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-gold">{state.credibility}</p>
+                  <p className="text-text-muted text-xs">信誉星</p>
+                </div>
+              </div>
+              <p className="text-text-muted text-xs mb-4">
+                {state.completedTracks.length + 1 >= 3
+                  ? '全部赛道完成！准备查看最终报告'
+                  : `已完成 ${state.completedTracks.length + 1}/3 赛道`}
+              </p>
+              <button className="btn-primary w-full" onClick={handleContinueToNextTrack}>
+                {state.completedTracks.length + 1 >= 3 ? '查看奖励' : '选择下一赛道'}
+              </button>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
 
@@ -312,7 +372,7 @@ export default function QuizPage() {
       <KeyboardHandler
         onTrue={() => handleAnswer(true)}
         onFalse={() => handleAnswer(false)}
-        disabled={showFeedback || showRevive}
+        disabled={showFeedback || showRevive || showTrackSummary}
       />
     </div>
   )

@@ -1,4 +1,4 @@
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useGame } from '../hooks/useGame'
 import TrackCard from '../components/TrackCard'
@@ -49,22 +49,17 @@ const item = {
 
 export default function TrackSelectPage() {
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
-  const mode = searchParams.get('mode') // 'post' = 后测赛道选择
-  const isPostTestMode = mode === 'post'
-
-  const { selectTrack, startPostTest, state } = useGame()
+  const { selectTrack, state } = useGame()
 
   const handleSelect = (track: Track) => {
-    if (isPostTestMode) {
-      startPostTest(track)
-    } else {
-      selectTrack(track)
-    }
+    if (state.completedTracks.includes(track)) return
+    selectTrack(track)
     navigate('/quiz')
   }
 
-  const preTestTrack = state.preTestTrack
+  const remainingTracks = TRACKS.filter(t => !state.completedTracks.includes(t.track))
+  const completedTracks = TRACKS.filter(t => state.completedTracks.includes(t.track))
+  const doneCount = state.completedTracks.length
 
   return (
     <motion.div
@@ -75,91 +70,84 @@ export default function TrackSelectPage() {
     >
       {/* 页面标题 */}
       <motion.div className="text-center mb-8" variants={item}>
-        <p className="text-text-muted text-sm mb-1">
-          {isPostTestMode ? '真相解码局 · 后测挑战' : '真相解码局 · 第一关'}
-        </p>
+        <p className="text-text-muted text-sm mb-1">真相解码局 · 第一关</p>
         <h2 className="text-2xl font-bold">
-          {isPostTestMode ? '选择后测赛道' : '请选择任务赛道'}
+          {doneCount === 0
+            ? '请选择任务赛道'
+            : `已完成 ${doneCount}/3 赛道 · 继续选择`}
         </h2>
-
-        {isPostTestMode ? (
-          <div className="mt-3 space-y-1">
-            <p className="text-text-muted text-xs">
-              后测与前测赛道保持一致，确保对比准确
-            </p>
-            {preTestTrack && (
-              <p className="text-gold text-xs">
-                💡 推荐选择与前测相同的赛道，对比结果更精准
-              </p>
-            )}
-          </div>
-        ) : (
-          <p className="text-text-muted text-xs mt-2">
-            选择一个你感兴趣的赛道，完成 5 题即可过关
-          </p>
-        )}
+        <p className="text-text-muted text-xs mt-2">
+          {doneCount === 0
+            ? '选择一个你感兴趣的赛道开始吧。完成全部3个赛道即可通关。'
+            : doneCount === 2
+              ? '还剩最后一个赛道，加油！'
+              : `还有 ${3 - doneCount} 个赛道等待你的挑战`}
+        </p>
       </motion.div>
 
-      {/* 赛道列表 */}
-      {isPostTestMode && preTestTrack && (
-        <motion.div
-          className="w-full max-w-sm mb-4"
-          variants={item}
-        >
-          <div className="bg-gold/5 border border-gold/10 rounded-xl p-3 text-center">
-            <p className="text-gold text-sm">
-              📌 你前测选择的是「{TRACKS.find(t => t.track === preTestTrack)?.title}」
-            </p>
-            <p className="text-text-muted text-xs mt-1">
-              选择同一赛道：对比更准确 | 选择不同赛道：会标注⚠️偏差提示
-            </p>
+      {/* 进度条 */}
+      <motion.div className="w-full max-w-sm lg:max-w-lg mb-6" variants={item}>
+        <div className="flex gap-1.5">
+          {[0, 1, 2].map(i => (
+            <div
+              key={i}
+              className={`flex-1 h-2 rounded-full transition-colors ${
+                i < doneCount ? 'bg-accent' : 'bg-[#E8DDD0]'
+              }`}
+            />
+          ))}
+        </div>
+      </motion.div>
+
+      {/* 已完成赛道 */}
+      {completedTracks.length > 0 && (
+        <motion.div className="w-full max-w-sm lg:max-w-lg mb-6" variants={item}>
+          <p className="text-text-muted text-xs mb-3 text-center">✅ 已完成</p>
+          <div className="space-y-3">
+            {completedTracks.map(t => (
+              <div
+                key={t.track}
+                className="glass-card w-full p-4 text-center opacity-60"
+              >
+                <div className="flex items-center gap-3 justify-center">
+                  <span className="text-xl">{t.title.split(' ')[0]}</span>
+                  <span className="text-text-muted text-base">{t.title.split(' ')[1]}</span>
+                  <span className="text-correct text-sm">已完成</span>
+                </div>
+              </div>
+            ))}
           </div>
         </motion.div>
       )}
 
-      {/* 三张赛道卡片 — 竖排 */}
+      {/* 可选赛道 */}
       <div className="w-full max-w-sm lg:max-w-lg space-y-7">
-        {TRACKS.map((t) => {
-          const isDone = state.completedTracks.includes(t.track)
-          const isRecommended = isPostTestMode && preTestTrack === t.track
-
-          return (
-            <motion.div key={t.track} variants={item}>
-              {isDone && !isPostTestMode ? (
-                <div className="glass-card w-full p-6 text-center opacity-60">
-                  <div className="aspect-[4/3] flex items-center justify-center bg-[#F1F5F9] rounded-xl mb-3">
-                    <span className="text-4xl">✅</span>
-                  </div>
-                  <p className="text-text-muted text-base">{t.title} — 已完成</p>
-                  <p className="text-text-muted text-sm mt-1">可继续选择其他赛道</p>
-                </div>
-              ) : (
-                <TrackCard
-                  track={t.track}
-                  title={t.title}
-                  color={t.color}
-                  tagline={t.tagline}
-                  tag={t.tag}
-                  avgCorrect={t.avgCorrect}
-                  examples={t.examples}
-                  onSelect={handleSelect}
-                  recommended={isRecommended}
-                />
-              )}
-            </motion.div>
-          )
-        })}
+        {TRACKS.filter(t => !state.completedTracks.includes(t.track)).map((t) => (
+          <motion.div key={t.track} variants={item}>
+            <TrackCard
+              track={t.track}
+              title={t.title}
+              color={t.color}
+              tagline={t.tagline}
+              tag={t.tag}
+              avgCorrect={t.avgCorrect}
+              examples={t.examples}
+              onSelect={handleSelect}
+              recommended={remainingTracks.length === 1}
+            />
+          </motion.div>
+        ))}
       </div>
 
       {/* 底部提示 */}
-      {!isPostTestMode && (
-        <motion.p
-          className="text-text-muted text-xs text-center mt-6"
-          variants={item}
-        >
-          💡 选一个最感兴趣的赛道开始吧
-        </motion.p>
-      )}
+      <motion.p
+        className="text-text-muted text-xs text-center mt-6"
+        variants={item}
+      >
+        {remainingTracks.length > 1
+          ? '💡 选择一个赛道开始吧，顺序由你决定'
+          : '💡 最后一关，加油！'}
+      </motion.p>
     </motion.div>
   )
 }

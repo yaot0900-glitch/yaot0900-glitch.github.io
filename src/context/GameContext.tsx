@@ -3,7 +3,7 @@ import { createContext, useContext, useReducer, type ReactNode, type Dispatch } 
 // ===== 类型定义 =====
 
 export type Track = 'health' | 'culture' | 'politics'
-export type Phase = 'home' | 'trackSelect' | 'quiz' | 'reward' | 'level2Invite' | 'level2Image' | 'level2Text' | 'skipEnd' | 'report'
+export type Phase = 'home' | 'preTestGuide' | 'trackSelect' | 'quiz' | 'reward' | 'level2Invite' | 'level2Image' | 'level2Text' | 'skipEnd' | 'report' | 'postTestGuide'
 
 export interface Answer {
   questionId: number
@@ -17,55 +17,49 @@ export interface Answer {
 
 export interface GameState {
   playerName: string
+  participantId: string             // 唯一参与者编号，用于关联问卷数据
   phase: Phase
   currentTrack: Track | null
   currentQuestionIndex: number       // 当前赛道中的题目索引 0-4
-  answers: Answer[]
-  score: number
-  credibility: number                // 5-0
-  completedTracks: Track[]
-  questionsPerTrack: number          // 每题数（默认5）
+  answers: Answer[]                  // 所有赛道的答题记录
+  score: number                      // 累计总分
+  credibility: number                // 5-0，答错扣1
+  completedTracks: Track[]           // 已完成的赛道列表
+  questionsPerTrack: number          // 每赛道题数（默认5）
   level2Complete: boolean
   level2Skipped: boolean
   level2Score: number
-  hasRevived: boolean                // 是否已使用复活
-  // 后测
-  preTestTrack: Track | null         // 前测所选赛道（用于后测推荐对比）
-  postTestTrack: Track | null        // 后测所选赛道
-  postTestAnswers: Answer[]
-  postTestScore: number
-  postTestComplete: boolean
-  postTestSkipped: boolean
-  // 随机抽题
-  trackQuestionMap: Record<string, { pre: number[]; post: number[] }>
+  hasRevived: boolean
+  trackQuestionIds: Record<Track, number[]>  // 每赛道随机分配的5题ID
 }
 
 // ===== Actions =====
 
 export type GameAction =
   | { type: 'SET_NAME'; payload: string }
+  | { type: 'INIT_GAME'; payload: { participantId: string; trackQuestionIds: Record<Track, number[]> } }
   | { type: 'SELECT_TRACK'; payload: Track }
-  | { type: 'ANSWER_QUESTION'; payload: Answer }
-  | { type: 'NEXT_QUESTION' }
-  | { type: 'COMPLETE_TRACK' }
   | { type: 'GO_TO_PHASE'; payload: Phase }
+  | { type: 'ANSWER_TRACK_QUESTION'; payload: Answer }
+  | { type: 'NEXT_QUESTION' }
+  | { type: 'COMPLETE_CURRENT_TRACK' }
   | { type: 'REVIVE' }
   | { type: 'SET_LEVEL2_SCORE'; payload: number }
   | { type: 'COMPLETE_LEVEL2' }
   | { type: 'SKIP_LEVEL2' }
   | { type: 'RESET_GAME' }
-  // 后测
-  | { type: 'START_POST_TEST'; payload: Track }
-  | { type: 'ANSWER_POST_TEST'; payload: Answer }
-  | { type: 'COMPLETE_POST_TEST' }
-  | { type: 'SKIP_POST_TEST' }
-  // 随机抽题
-  | { type: 'SET_TRACK_QUESTIONS'; payload: { track: Track; pre: number[]; post: number[] } }
 
 // ===== 初始状态 =====
 
+const initialTrackQuestionIds: Record<Track, number[]> = {
+  health: [],
+  culture: [],
+  politics: [],
+}
+
 const initialState: GameState = {
   playerName: '',
+  participantId: '',
   phase: 'home',
   currentTrack: null,
   currentQuestionIndex: 0,
@@ -78,14 +72,7 @@ const initialState: GameState = {
   level2Skipped: false,
   level2Score: 0,
   hasRevived: false,
-  // 后测
-  preTestTrack: null,
-  postTestTrack: null,
-  postTestAnswers: [],
-  postTestScore: 0,
-  postTestComplete: false,
-  postTestSkipped: false,
-  trackQuestionMap: {},
+  trackQuestionIds: initialTrackQuestionIds,
 }
 
 // ===== Reducer =====
@@ -95,15 +82,38 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     case 'SET_NAME':
       return { ...state, playerName: action.payload }
 
-    case 'SELECT_TRACK':
+    case 'INIT_GAME': {
+      const { participantId, trackQuestionIds } = action.payload
+      return {
+        ...state,
+        participantId,
+        trackQuestionIds,
+        currentTrack: null,
+        currentQuestionIndex: 0,
+        answers: [],
+        score: 0,
+        credibility: 5,
+        completedTracks: [],
+        level2Complete: false,
+        level2Skipped: false,
+        level2Score: 0,
+        hasRevived: false,
+      }
+    }
+
+    case 'SELECT_TRACK': {
       return {
         ...state,
         currentTrack: action.payload,
         currentQuestionIndex: 0,
         phase: 'quiz',
       }
+    }
 
-    case 'ANSWER_QUESTION': {
+    case 'GO_TO_PHASE':
+      return { ...state, phase: action.payload }
+
+    case 'ANSWER_TRACK_QUESTION': {
       const answer = action.payload
       const newScore = state.score + answer.score
       const newCredibility = answer.isCorrect ? state.credibility : Math.max(0, state.credibility - 1)
@@ -118,23 +128,32 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     }
 
     case 'NEXT_QUESTION':
-      return state // 仅触发重渲染，index已在ANSWER_QUESTION中+1
+      return state // 仅触发重渲染
 
-    case 'COMPLETE_TRACK': {
+    case 'COMPLETE_CURRENT_TRACK': {
       const track = state.currentTrack
       if (!track) return state
-      // 3选1：完成一个赛道即进入奖励
-      const isPreTest = !state.preTestTrack
+
+      const newCompletedTracks = [...state.completedTracks, track]
+      const allDone = newCompletedTracks.length >= 3
+
+      if (allDone) {
+        return {
+          ...state,
+          completedTracks: newCompletedTracks,
+          phase: 'reward',
+        }
+      }
+
+      // 还有赛道未完成 → 回到赛道选择页
       return {
         ...state,
-        completedTracks: [...state.completedTracks, track],
-        preTestTrack: isPreTest ? track : state.preTestTrack,
-        phase: 'reward',
+        completedTracks: newCompletedTracks,
+        currentTrack: null,
+        currentQuestionIndex: 0,
+        phase: 'trackSelect',
       }
     }
-
-    case 'GO_TO_PHASE':
-      return { ...state, phase: action.payload }
 
     case 'REVIVE':
       return { ...state, credibility: 2, hasRevived: true }
@@ -143,45 +162,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return { ...state, level2Score: state.level2Score + action.payload }
 
     case 'COMPLETE_LEVEL2':
-      return { ...state, level2Complete: true, postTestSkipped: false, phase: 'report' }
+      return { ...state, level2Complete: true, phase: 'report' }
 
     case 'SKIP_LEVEL2':
       return { ...state, level2Skipped: true, phase: 'skipEnd' }
-
-    // ---- 后测 ----
-    case 'START_POST_TEST':
-      return {
-        ...state,
-        postTestTrack: action.payload,
-        currentTrack: action.payload,
-        currentQuestionIndex: 0,
-        phase: 'quiz',
-      }
-
-    case 'ANSWER_POST_TEST': {
-      const ptAnswer = action.payload
-      return {
-        ...state,
-        postTestAnswers: [...state.postTestAnswers, ptAnswer],
-        postTestScore: state.postTestScore + ptAnswer.score,
-        currentQuestionIndex: state.currentQuestionIndex + 1,
-      }
-    }
-
-    case 'COMPLETE_POST_TEST':
-      return { ...state, postTestComplete: true, phase: 'report' }
-
-    case 'SKIP_POST_TEST':
-      return { ...state, postTestSkipped: true }
-
-    case 'SET_TRACK_QUESTIONS':
-      return {
-        ...state,
-        trackQuestionMap: {
-          ...state.trackQuestionMap,
-          [action.payload.track]: { pre: action.payload.pre, post: action.payload.post },
-        },
-      }
 
     case 'RESET_GAME':
       return { ...initialState, playerName: state.playerName }
