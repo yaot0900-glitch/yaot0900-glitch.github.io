@@ -26,28 +26,20 @@ interface QuestionData {
   tip: string
 }
 
-/** 根据赛道和阶段获取题目列表 */
-function getQuestions(track: Track, phase: 'pre' | 'post'): QuestionData[] {
-  const trackData = questionBank[track]
-  if (!trackData) return []
-  return (trackData[phase] || []) as QuestionData[]
-}
-
 export default function QuizPage() {
   const navigate = useNavigate()
-  const { state, submitAnswer, completeTrack, submitPostTestAnswer, completePostTest, revive, isPostTestMode } = useGame()
+  const { state, submitAnswer, completeTrack, submitPostTestAnswer, completePostTest, revive, isPostTestMode, getCurrentQuestionIds } = useGame()
 
   const track = state.currentTrack
   const index = state.currentQuestionIndex
 
-  // 判断当前是前测还是后测
-  const phase = isPostTestMode ? 'post' : 'pre'
-
-  // 获取当前赛道题目
+  // 获取当前赛道随机分配的题目
+  const questionIds = getCurrentQuestionIds()
   const trackQuestions = useMemo(() => {
-    if (!track) return []
-    return getQuestions(track, phase)
-  }, [track, phase])
+    if (!track || questionIds.length === 0) return []
+    const all = (questionBank as unknown as Record<string, { questions: QuestionData[] }>)[track]?.questions || []
+    return questionIds.map(id => all.find(q => q.id === id)).filter(Boolean) as QuestionData[]
+  }, [track, questionIds])
 
   const totalQuestions = trackQuestions.length
   const currentQuestion = trackQuestions[index]

@@ -36,6 +36,8 @@ export interface GameState {
   postTestScore: number
   postTestComplete: boolean
   postTestSkipped: boolean
+  // 随机抽题
+  trackQuestionMap: Record<string, { pre: number[]; post: number[] }>
 }
 
 // ===== Actions =====
@@ -57,6 +59,8 @@ export type GameAction =
   | { type: 'ANSWER_POST_TEST'; payload: Answer }
   | { type: 'COMPLETE_POST_TEST' }
   | { type: 'SKIP_POST_TEST' }
+  // 随机抽题
+  | { type: 'SET_TRACK_QUESTIONS'; payload: { track: Track; pre: number[]; post: number[] } }
 
 // ===== 初始状态 =====
 
@@ -81,6 +85,7 @@ const initialState: GameState = {
   postTestScore: 0,
   postTestComplete: false,
   postTestSkipped: false,
+  trackQuestionMap: {},
 }
 
 // ===== Reducer =====
@@ -168,6 +173,15 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'SKIP_POST_TEST':
       return { ...state, postTestSkipped: true }
+
+    case 'SET_TRACK_QUESTIONS':
+      return {
+        ...state,
+        trackQuestionMap: {
+          ...state.trackQuestionMap,
+          [action.payload.track]: { pre: action.payload.pre, post: action.payload.post },
+        },
+      }
 
     case 'RESET_GAME':
       return { ...initialState, playerName: state.playerName }

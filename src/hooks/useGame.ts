@@ -1,6 +1,25 @@
 import { useCallback } from 'react'
 import { useGameContext, type Track, type Answer } from '../context/GameContext'
 import { calcQuestionScore, calcTrackBonus } from '../utils/scoring'
+import questionBank from '../data/questions.json'
+
+/** Fisher-Yates 洗牌 */
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr]
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[a[i], a[j]] = [a[j], a[i]]
+  }
+  return a
+}
+
+/** 从赛道全题库中随机分配前测5题+后测5题 */
+function splitTrackQuestions(track: Track): { pre: number[]; post: number[] } {
+  const trackData = (questionBank as unknown as Record<string, { questions: { id: number }[] }>)[track]
+  const ids = trackData.questions.map(q => q.id)
+  const shuffled = shuffle(ids)
+  return { pre: shuffled.slice(0, 5), post: shuffled.slice(5, 10) }
+}
 
 export function useGame() {
   const { state, dispatch } = useGameContext()
@@ -10,8 +29,10 @@ export function useGame() {
     dispatch({ type: 'SET_NAME', payload: name })
   }, [dispatch])
 
-  /** 选择赛道并开始答题 */
+  /** 选择赛道并开始答题（随机抽5题作为前测） */
   const selectTrack = useCallback((track: Track) => {
+    const split = splitTrackQuestions(track)
+    dispatch({ type: 'SET_TRACK_QUESTIONS', payload: { track, pre: split.pre, post: split.post } })
     dispatch({ type: 'SELECT_TRACK', payload: track })
   }, [dispatch])
 
@@ -87,10 +108,15 @@ export function useGame() {
 
   // ---- 后测操作 ----
 
-  /** 开始后测（选择赛道） */
+  /** 开始后测（选择赛道，使用已分配的后测题目或重新分配） */
   const startPostTest = useCallback((track: Track) => {
+    // 如果该赛道已有分配（同赛道后测），使用已存储的；否则重新分配
+    if (!state.trackQuestionMap[track]) {
+      const split = splitTrackQuestions(track)
+      dispatch({ type: 'SET_TRACK_QUESTIONS', payload: { track, pre: split.pre, post: split.post } })
+    }
     dispatch({ type: 'START_POST_TEST', payload: track })
-  }, [dispatch])
+  }, [dispatch, state.trackQuestionMap])
 
   /** 提交后测答案 */
   const submitPostTestAnswer = useCallback((
@@ -157,6 +183,14 @@ export function useGame() {
   /** 当前是否处于后测答题模式 */
   const isPostTestMode = state.postTestTrack !== null && !state.postTestComplete
 
+  /** 获取当前赛道/阶段应展示的题目ID列表 */
+  const getCurrentQuestionIds = useCallback((): number[] => {
+    if (!state.currentTrack) return []
+    const map = state.trackQuestionMap[state.currentTrack]
+    if (!map) return []
+    return isPostTestMode ? map.post : map.pre
+  }, [state.currentTrack, state.trackQuestionMap, isPostTestMode])
+
   return {
     state,
     setName,
@@ -176,6 +210,7 @@ export function useGame() {
     completePostTest,
     skipPostTest,
     isPostTestMode,
+    getCurrentQuestionIds,
     // 通用
     isTrackDone,
     allTracksDone,
