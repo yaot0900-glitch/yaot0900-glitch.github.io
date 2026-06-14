@@ -11,7 +11,7 @@
 export const PRE_TEST_URL = 'https://v.wjx.cn/vm/Q5r1tXu.aspx'
 
 /** 问卷星后测链接 */
-export const POST_TEST_URL = 'https://v.wjx.cn/vm/OrMMUfZ.aspx'
+export const POST_TEST_URL = 'https://v.wjx.cn/vm/eo3xdJn.aspx'
 
 /** 前测问卷二维码图片路径（放在 public/images/ 下） */
 export const PRE_TEST_QR = 'images/qr-pre-test.png' // 二维码图片暂未放置

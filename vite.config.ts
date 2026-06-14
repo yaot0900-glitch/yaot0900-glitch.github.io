@@ -7,5 +7,20 @@ export default defineConfig({
   base: '/',
   build: {
     outDir: 'docs',
+    rollupOptions: {
+      output: {
+        manualChunks(id: string) {
+          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom') || id.includes('node_modules/react-router')) {
+            return 'react-vendor'
+          }
+          if (id.includes('node_modules/framer-motion')) {
+            return 'motion'
+          }
+          if (id.includes('node_modules/html2canvas')) {
+            return 'canvas'
+          }
+        },
+      },
+    },
   },
 })
