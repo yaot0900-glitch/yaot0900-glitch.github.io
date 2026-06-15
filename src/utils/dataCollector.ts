@@ -1,7 +1,7 @@
 /**
  * Google Sheets 数据提交工具
  *
- * 在 ReportPage 加载完成后自动提交游戏数据到 Google Sheets。
+ * 在 PostTestPage 提交后测时一次性提交全部实验数据（前测+游戏+后测）。
  * 静默提交，不影响游戏体验；URL 未配置时自动跳过。
  */
 
@@ -37,6 +37,9 @@ export interface GameDataPayload {
   level2Score: number
   credibility: number
   hasRevived: boolean
+  // 问卷数据
+  preTestAnswers: Record<string, string>
+  postTestAnswers: Record<string, string>
 }
 
 /** 将 Answer 数组转换为提交格式 */
@@ -105,6 +108,36 @@ export function buildGameDataPayload(
     level2Score,
     credibility,
     hasRevived,
+    preTestAnswers: {},
+    postTestAnswers: {},
+  }
+}
+
+/** 构建完整实验数据载荷（前测 + 游戏 + 后测） */
+export function buildFullDataPayload(
+  playerName: string,
+  participantId: string,
+  allAnswers: Answer[],
+  totalScore: number,
+  totalCorrect: number,
+  totalAnswered: number,
+  overallCorrectRate: number,
+  level2Complete: boolean,
+  level2Score: number,
+  credibility: number,
+  hasRevived: boolean,
+  preTestAnswers: Record<string, string>,
+  postTestAnswers: Record<string, string>,
+): GameDataPayload {
+  const gamePayload = buildGameDataPayload(
+    playerName, participantId, allAnswers, totalScore, totalCorrect,
+    totalAnswered, overallCorrectRate, level2Complete, level2Score, credibility, hasRevived,
+  )
+
+  return {
+    ...gamePayload,
+    preTestAnswers,
+    postTestAnswers,
   }
 }
 

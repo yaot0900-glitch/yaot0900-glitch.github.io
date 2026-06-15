@@ -3,7 +3,7 @@ import { createContext, useContext, useReducer, type ReactNode, type Dispatch } 
 // ===== 类型定义 =====
 
 export type Track = 'health' | 'culture' | 'politics'
-export type Phase = 'home' | 'preTestGuide' | 'trackSelect' | 'quiz' | 'reward' | 'level2Invite' | 'level2Image' | 'level2Text' | 'skipEnd' | 'report' | 'postTestGuide'
+export type Phase = 'home' | 'preTest' | 'trackSelect' | 'quiz' | 'reward' | 'level2Invite' | 'level2Image' | 'level2Text' | 'skipEnd' | 'report' | 'postTest' | 'end'
 
 export interface Answer {
   questionId: number
@@ -31,6 +31,12 @@ export interface GameState {
   level2Score: number
   hasRevived: boolean
   trackQuestionIds: Record<Track, number[]>  // 每赛道随机分配的5题ID
+  // 问卷数据
+  preTestAnswers: Record<string, string>
+  postTestAnswers: Record<string, string>
+  preTestComplete: boolean
+  postTestComplete: boolean
+  dataSubmitted: boolean
 }
 
 // ===== Actions =====
@@ -48,6 +54,9 @@ export type GameAction =
   | { type: 'COMPLETE_LEVEL2' }
   | { type: 'SKIP_LEVEL2' }
   | { type: 'RESET_GAME' }
+  | { type: 'SET_PRE_TEST_ANSWERS'; payload: Record<string, string> }
+  | { type: 'SET_POST_TEST_ANSWERS'; payload: Record<string, string> }
+  | { type: 'MARK_DATA_SUBMITTED' }
 
 // ===== 初始状态 =====
 
@@ -73,6 +82,11 @@ const initialState: GameState = {
   level2Score: 0,
   hasRevived: false,
   trackQuestionIds: initialTrackQuestionIds,
+  preTestAnswers: {},
+  postTestAnswers: {},
+  preTestComplete: false,
+  postTestComplete: false,
+  dataSubmitted: false,
 }
 
 // ===== Reducer =====
@@ -98,6 +112,11 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         level2Skipped: false,
         level2Score: 0,
         hasRevived: false,
+        preTestAnswers: {},
+        postTestAnswers: {},
+        preTestComplete: false,
+        postTestComplete: false,
+        dataSubmitted: false,
       }
     }
 
@@ -169,6 +188,15 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'RESET_GAME':
       return { ...initialState, playerName: state.playerName }
+
+    case 'SET_PRE_TEST_ANSWERS':
+      return { ...state, preTestAnswers: action.payload, preTestComplete: true }
+
+    case 'SET_POST_TEST_ANSWERS':
+      return { ...state, postTestAnswers: action.payload, postTestComplete: true, phase: 'end' }
+
+    case 'MARK_DATA_SUBMITTED':
+      return { ...state, dataSubmitted: true }
 
     default:
       return state

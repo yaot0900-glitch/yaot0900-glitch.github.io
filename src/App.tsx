@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { GameProvider } from './context/GameContext'
 import CoverPage from './pages/CoverPage'
 import HomePage from './pages/HomePage'
-import PreTestGuidePage from './pages/PreTestGuidePage'
+import PreTestPage from './pages/PreTestPage'
 import TrackSelectPage from './pages/TrackSelectPage'
 import QuizPage from './pages/QuizPage'
 import RewardPage from './pages/RewardPage'
@@ -11,7 +11,7 @@ import AiImagePage from './pages/AiImagePage'
 import AiTextPage from './pages/AiTextPage'
 import SkipEndPage from './pages/SkipEndPage'
 import ReportPage from './pages/ReportPage'
-import PostTestGuidePage from './pages/PostTestGuidePage'
+import PostTestPage from './pages/PostTestPage'
 import CalibratePage from './pages/CalibratePage'
 
 function App() {
@@ -21,7 +21,7 @@ function App() {
         <Routes>
           <Route path="/" element={<CoverPage />} />
           <Route path="/home" element={<HomePage />} />
-          <Route path="/pre-test-guide" element={<PreTestGuidePage />} />
+          <Route path="/pre-test" element={<PreTestPage />} />
           <Route path="/select" element={<TrackSelectPage />} />
           <Route path="/quiz" element={<QuizPage />} />
           <Route path="/reward" element={<RewardPage />} />
@@ -30,7 +30,7 @@ function App() {
           <Route path="/level2-text" element={<AiTextPage />} />
           <Route path="/skip-end" element={<SkipEndPage />} />
           <Route path="/report" element={<ReportPage />} />
-          <Route path="/post-test-guide" element={<PostTestGuidePage />} />
+          <Route path="/post-test" element={<PostTestPage />} />
           <Route path="/calibrate" element={<CalibratePage />} />
         </Routes>
       </BrowserRouter>

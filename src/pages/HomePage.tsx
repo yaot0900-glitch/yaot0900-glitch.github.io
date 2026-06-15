@@ -51,7 +51,7 @@ export default function HomePage() {
     setError('')
     setName(trimmed)
     initGame()
-    navigate('/pre-test-guide')
+    navigate('/pre-test')
   }, [nameInput, setName, initGame, navigate])
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

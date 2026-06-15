@@ -117,8 +117,23 @@ export function useGame() {
   }, [state.answers, state.currentTrack, state.credibility, state.questionsPerTrack])
 
   /** 跳转到指定页面 */
-  const goTo = useCallback((phase: 'home' | 'preTestGuide' | 'trackSelect' | 'quiz' | 'reward' | 'level2Invite' | 'level2Image' | 'level2Text' | 'skipEnd' | 'report' | 'postTestGuide') => {
+  const goTo = useCallback((phase: 'home' | 'preTest' | 'trackSelect' | 'quiz' | 'reward' | 'level2Invite' | 'level2Image' | 'level2Text' | 'skipEnd' | 'report' | 'postTest' | 'end') => {
     dispatch({ type: 'GO_TO_PHASE', payload: phase })
+  }, [dispatch])
+
+  /** 保存前测答案 */
+  const setPreTestAnswers = useCallback((answers: Record<string, string>) => {
+    dispatch({ type: 'SET_PRE_TEST_ANSWERS', payload: answers })
+  }, [dispatch])
+
+  /** 保存后测答案 */
+  const setPostTestAnswers = useCallback((answers: Record<string, string>) => {
+    dispatch({ type: 'SET_POST_TEST_ANSWERS', payload: answers })
+  }, [dispatch])
+
+  /** 标记数据已提交 */
+  const markDataSubmitted = useCallback(() => {
+    dispatch({ type: 'MARK_DATA_SUBMITTED' })
   }, [dispatch])
 
   /** 复活 */
@@ -190,6 +205,9 @@ export function useGame() {
     completeLevel2,
     addLevel2Score,
     resetGame,
+    setPreTestAnswers,
+    setPostTestAnswers,
+    markDataSubmitted,
     // 衍生
     isTrackDone,
     allTracksDone,

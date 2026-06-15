@@ -1,9 +1,8 @@
-import { useMemo, useCallback, useEffect } from 'react'
+import { useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useGame } from '../hooks/useGame'
 import { getRank, getPlayStyle, calcGenericRadarData } from '../utils/scoring'
-import { buildGameDataPayload, submitGameData } from '../utils/dataCollector'
 import RadarChart from '../components/RadarChart'
 import Button from '../components/Button'
 import type { Track } from '../context/GameContext'
@@ -65,29 +64,11 @@ export default function ReportPage() {
     })
   }, [state.answers])
 
-  // 提交游戏数据到 Google Sheets
-  useEffect(() => {
-    const payload = buildGameDataPayload(
-      state.playerName,
-      state.participantId,
-      state.answers,
-      totalScore,
-      totalCorrect,
-      totalAnswered,
-      correctRate,
-      state.level2Complete,
-      state.level2Score,
-      state.credibility,
-      state.hasRevived
-    )
-    submitGameData(payload)
-  }, []) // 仅执行一次
-
   // 截图
   const handleScreenshot = useCallback(() => { window.print() }, [])
 
   // 后测
-  const handleGoToPostTest = () => navigate('/post-test-guide')
+  const handleGoToPostTest = () => navigate('/post-test')
 
   return (
     <motion.div
