@@ -32,6 +32,8 @@ export interface QuestionnaireQuestion {
   preOnly?: boolean      // 仅前测
   postOnly?: boolean     // 仅后测
   category?: string      // 分类标签
+  leftLabel?: string     // Likert左端点标签
+  rightLabel?: string    // Likert右端点标签
 }
 
 export type QuestionnaireAnswers = Record<string, string>
@@ -198,6 +200,17 @@ export const ALL_QUESTIONS: QuestionnaireQuestion[] = [
     text: '我认为"很多热门内容可能是被运营或资金推动的"。',
     options: LIKERT_5,
     category: '媒介算法认知',
+  },
+
+  // ========== AI文本识别（前后测共享，1题）==========
+  {
+    id: 'ai-text-detect',
+    type: 'likert-5',
+    text: '请阅读以下短文，你认为上述文本在多大程度上可能由人工智能生成？\n\n"近年来，数字技术正在深刻改变人们的生活方式。人工智能、大数据和云计算等技术不断发展，为教育、医疗、交通等领域带来了新的机遇。在教育领域，智能学习平台能够根据学生特点提供个性化学习方案；在医疗领域，人工智能辅助诊断系统可以提高诊疗效率；在交通领域，智慧交通系统有助于缓解城市拥堵问题。\n\n与此同时，数字技术的发展也带来了一些挑战。例如，个人隐私保护、算法公平性以及信息真实性等问题受到社会广泛关注。因此，在推动技术创新的同时，也需要加强制度建设和伦理规范，促进科技向善发展。\n\n总体来看，数字技术既是推动社会进步的重要力量，也是需要审慎治理的重要领域。未来应坚持创新与规范并重，实现技术发展与社会价值的协调统一。"',
+    options: LIKERT_5,
+    category: 'AI素养',
+    leftLabel: '完全不像AI生成',
+    rightLabel: '极有可能是AI生成',
   },
 
   // ========== 前测专有：信息辨识能力自评（2题）==========

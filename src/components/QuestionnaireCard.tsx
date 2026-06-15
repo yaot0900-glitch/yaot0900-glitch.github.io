@@ -38,6 +38,8 @@ export default function QuestionnaireCard({ question, value, onChange, index, sh
           options={question.options || []}
           value={value}
           onChange={(v) => onChange(question.id, v)}
+          leftLabel={question.leftLabel || '非常不同意'}
+          rightLabel={question.rightLabel || '非常同意'}
         />
       )}
 
@@ -65,14 +67,16 @@ export default function QuestionnaireCard({ question, value, onChange, index, sh
 
 // ============ 子组件 ============
 
-function LikertInput({ options, value, onChange }: {
+function LikertInput({ options, value, onChange, leftLabel, rightLabel }: {
   options: { value: string; label: string }[]
   value: string
   onChange: (v: string) => void
+  leftLabel: string
+  rightLabel: string
 }) {
   return (
     <div className="flex items-center gap-1.5 lg:gap-3">
-      <span className="text-text-muted text-xs lg:text-sm shrink-0">非常不同意</span>
+      <span className="text-text-muted text-xs lg:text-sm shrink-0 whitespace-nowrap">{leftLabel}</span>
       <div className="flex gap-1.5 lg:gap-2.5 flex-1 justify-center">
         {options.map(opt => {
           const selected = value === opt.value
@@ -92,7 +96,7 @@ function LikertInput({ options, value, onChange }: {
           )
         })}
       </div>
-      <span className="text-text-muted text-xs lg:text-sm shrink-0">非常同意</span>
+      <span className="text-text-muted text-xs lg:text-sm shrink-0 whitespace-nowrap">{rightLabel}</span>
     </div>
   )
 }
